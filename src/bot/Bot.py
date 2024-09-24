@@ -5,6 +5,9 @@ from telebot.custom_filters import StateFilter, IsDigitFilter, TextMatchFilter
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
+from telebot.types import LinkPreviewOptions
+
+
 
 class Bot:
     """class to connect and run bot"""
@@ -38,7 +41,7 @@ class Bot:
         bot_username = self.get_bot_data(bot=self.bot, requested_data="username")
         self.logger.info(f"Бот @{bot_username} подключён! Нажми /start для начала")
         
-        self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
+        self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
 
 
     def get_bot_data(self, bot: TeleBot, requested_data: str) -> str:
@@ -54,9 +57,9 @@ class Bot:
         self.bot.send_message(chat_id=self.admin_id, text=message)
         
         
-    def send_messages(self, chat_id, messages: list):
+    def send_messages(self, chat_id, messages: list, disable_preview=False):
         for message in messages:
-            self.bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown")
+            self.bot.send_message(chat_id=chat_id, text=message, parse_mode="Markdown", disable_web_page_preview=disable_preview)
         
     
     def start_bot(self) -> None:
@@ -65,8 +68,6 @@ class Bot:
         self.bot.add_custom_filter(TextMatchFilter())
         
         self.bot.setup_middleware(StateMiddleware(self.bot))
-        
-        self.tell_admin(message="/start")
         
         self.connect_bot()
         

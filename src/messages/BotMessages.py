@@ -14,6 +14,7 @@ from src.users.User import User
 from src.bot.Bot import Bot
 
 
+
 """ Проблема: бот на другом телефоне всё равно видит первого сохранённого пользователя, который вошёл в бот, то есть меня... Это пиздец, честно говоря, это всё сильно усложняет... """
 
 class SlashCommands:
@@ -50,17 +51,13 @@ class SlashCommands:
         @self.bot.message_handler(commands=["start"])
         def start_command(message: Message):
             self.user = User(message)
-            self.logger.info(f"текущий юзер команды /start: {self.user.first_name} @{ self.user.username }")
             self.chat_id = self.user.chat_id
-            
             self.mongoDB = MongoDB(self.chat_id)
             
+            first_message = f"Рад снова тебя видеть, {self.user.first_name}! Чем могу помочь?"
+            self.bot.send_message(chat_id=self.chat_id, text=first_message)
             
             messages = self.messages["start"]
-            
-            self.logger.info(f"first name в коде: { self.user.first_name }")
-            
-            # messages[0] = messages[0].format(self.user.first_name)
             self.send_messages(chat_id=self.chat_id, messages=messages)
             
             
@@ -78,7 +75,7 @@ class SlashCommands:
             
             
             messages = self.messages["schedule"]
-            self.send_messages(chat_id=self.chat_id, messages=messages)
+            self.send_messages(chat_id=self.chat_id, messages=messages, disable_preview=True)
             
             self.tell_admin(f"{ self.user.first_name } @{ self.user.username } использовал команду /schedule ✅")
             self.logger.info(f"{ self.user.first_name } @{ self.user.username } использовал команду /schedule ✅")
