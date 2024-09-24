@@ -1,0 +1,8 @@
+bot:
+	uvicorn src.main:app --reload --log-level debug
+
+test:
+	uvicorn test:app
+
+production:
+	uvicorn main:app --host 0.0.0.0 --port 8000
