@@ -10,7 +10,7 @@ class Bot:
     """class to connect and run bot"""
 
     def __init__(self):
-        self.bot_token = Dotenv().ads_bot_token
+        self.bot_token = Dotenv().bot_token
         self.admin_id = Dotenv().admin_id
         
         self.logger = Logger()
