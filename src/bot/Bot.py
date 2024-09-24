@@ -38,7 +38,7 @@ class Bot:
         bot_username = self.get_bot_data(bot=self.bot, requested_data="username")
         self.logger.info(f"Бот @{bot_username} подключён! Нажми /start для начала")
         
-        self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
+        self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
 
 
     def get_bot_data(self, bot: TeleBot, requested_data: str) -> str:
