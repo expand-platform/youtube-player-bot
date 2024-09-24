@@ -54,7 +54,10 @@ class SlashCommands:
             self.chat_id = self.user.chat_id
             self.mongoDB = MongoDB(self.chat_id)
             
-            first_message = f"Рад снова тебя видеть, {self.user.first_name}! Чем могу помочь?"
+            
+            if Language().get_active_language() == "ru":
+                first_message = f"Рад снова тебя видеть, {self.user.first_name}! Чем могу помочь?"
+
             self.bot.send_message(chat_id=self.chat_id, text=first_message)
             
             messages = self.messages["start"]
