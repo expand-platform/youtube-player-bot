@@ -19,6 +19,6 @@ ADMIN_SLASH_COMMANDS = [
     BotCommand("start", commands["start"]),
     BotCommand("schedule", commands["schedule"]),
     BotCommand("payment", commands["payment"]),
-    BotCommand("clean", commands["clear_users"]),
+    # BotCommand("clean", commands["clear_users"]),
 ]
 

@@ -119,6 +119,10 @@ class BotMessages:
             self.logger.info(f"{ user.real_name } @{ user.username } зашёл в раздел /schedule ⏰")
             
             
+    #? У студента будет свой раздел payment, у админа - свой
+    #? Админ будет видеть всех студенто, их суммы, доход и статусы оплат (и сколько осталось) 
+    #? Студент видит только свой статус и сумму 
+            
     """ /payment """
     def set_payment(self):
         @self.bot.message_handler(commands=["payment"], access_level=["student"])
