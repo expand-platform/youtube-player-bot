@@ -3,15 +3,22 @@ from src.languages.Language import Language
 
 commands = Language().commands
 
-
-COMMON_SLASH_COMMANDS = [
+GUEST_SLASH_COMMANDS = [
     BotCommand("start", commands["start"]),
-    BotCommand("schedule", commands["start"]),
 ]
-STUDENT_SLASH_COMMANDS = COMMON_SLASH_COMMANDS
+
+STUDENT_SLASH_COMMANDS = [
+    BotCommand("start", commands["start"]),
+    BotCommand("schedule", commands["schedule"]),
+    BotCommand("payment", commands["payment"]),
+]
 
 
-ADMIN_SLASH_COMMANDS = COMMON_SLASH_COMMANDS + [
-    BotCommand("set_commands", "Змінити команди бота"),
+
+ADMIN_SLASH_COMMANDS = [
+    BotCommand("start", commands["start"]),
+    BotCommand("schedule", commands["schedule"]),
+    BotCommand("payment", commands["payment"]),
+    BotCommand("clean", commands["clear_users"]),
 ]
 

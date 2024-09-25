@@ -6,7 +6,7 @@ from os import getenv, path
 
 from src.utils.Logger import Logger 
 from src.bot.Bot import SchoolBot
-from src.messages.BotMessages import BotMessages, SlashCommands 
+from src.messages.BotMessages import BotMessages
 
 
 def main(app: FastAPI):
@@ -17,7 +17,6 @@ def main(app: FastAPI):
     school_bot = SchoolBot()
     
     # set commands and message handlers
-    SlashCommands(school_bot) 
     BotMessages(school_bot)
     
     school_bot.start_bot()
