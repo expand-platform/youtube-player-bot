@@ -14,7 +14,6 @@ STUDENT_SLASH_COMMANDS = [
 ]
 
 
-
 ADMIN_SLASH_COMMANDS = [
     BotCommand("start", commands["start"]),
     BotCommand("schedule", commands["schedule"]),

@@ -1,7 +1,10 @@
 import logging
+from src.utils.Dotenv import Dotenv
+
 
 class Logger:
     def __init__(self):
+        self.environment = Dotenv().environment
         self.set_basic_config()
 
 
@@ -19,9 +22,10 @@ class Logger:
 
 
     def info(self, message: str):
-        logger = logging.getLogger(__name__)
-        logger.info(message)
-        self.print_separators()
+        if self.environment == "development":
+            logger = logging.getLogger(__name__)
+            logger.info(message)
+            self.print_separators()
 
 
     @staticmethod

@@ -12,73 +12,51 @@ from src.languages.Language import Language
 from src.users.User import User
 
 from src.bot.Bot import Bot
+from src.automation.StepGenerator import StepGenerator
+
 
 
 
 class BotMessages:
     def __init__(self, bot: Bot):
-        self.bot = bot.bot
-        self.send_messages = bot.send_messages
-        self.format_message = bot.format_message
-        self.tell_admin = bot.tell_admin
+        self.bot = bot.bot_instance
+        self.chat_id = None
         
+        self.step_generator = StepGenerator(bot)
         self.logger = Logger()
         self.messages = Language().messages
         
-        self.chat_id = None
-        
         self.enable_slash_commands()
-        
-        
-    def set_slash_commands(self, message):
-        user = User(message)
-        
-        if user.access_level == "guest":
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
-        
-        elif user.access_level == "student":
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
-            
-        elif user.access_level == "admin":
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=ADMIN_SLASH_COMMANDS)
-        
+   
         
     def enable_slash_commands(self):
         """ clears and sets slash commands """
 
-        # guests
-        self.set_guest_start()
+        #? /start (guests)
+        self.step_generator.set_start(
+            access_level=["guest"],
+            format_message=self.messages["guest_welcome"],
+            format_variable="user.first_name",
+        )
+        
+        #? /start (students, admin)
+        self.step_generator.set_start(
+            access_level=["student", "admin"],
+            format_message=self.messages["welcome_greeting"],
+            format_variable="user.real_name",
+        )
+        
         
         # students / admins
-        self.set_start()
-        self.set_schedule()
-        self.set_payment()
+        # self.set_start()
+        # self.set_schedule()
+        # self.set_payment()
 
         # admin only
-        self.set_clean_users()
+        # self.set_clean_users()
         
         self.logger.info('слеш-команды (/) установлены ✅')
         
-    
-    #? Со временем вынесу guest commands в отдельный класс
-    def set_guest_start(self):
-        @self.bot.message_handler(commands=['start'], access_level=["guest"])
-        def handle_guest_start(message):
-            # set guests commands 
-            self.set_slash_commands(message)
-            user = User(message)
-            
-            
-            
-            
-            self.format_message(chat_id=user.chat_id, message=self.messages["guest_welcome"], format_variable=user.first_name)
-            
-            self.tell_admin(f"{ user.first_name } @{ user.username } использовал команду /start ✅")
-            self.logger.info(f"{ user.first_name } использовал команду /start ✅")
-            
         
     """ /start """
     def set_start(self):
@@ -101,60 +79,60 @@ class BotMessages:
   
   
   
-    """ /schedule """
-    def set_schedule(self):
-        @self.bot.message_handler(commands=["schedule"], access_level=["student", "admin"])
-        def schedule_command(message: Message):
-            self.set_slash_commands(message)
-            user = User(message)
-            self.logger.info(f"текущий юзер команды /schedule: {user.first_name} @{ user.username }")
-            self.chat_id = user.chat_id
+    # """ /schedule """
+    # def set_schedule(self):
+    #     @self.bot.message_handler(commands=["schedule"], access_level=["student", "admin"])
+    #     def schedule_command(message: Message):
+    #         self.set_slash_commands(message)
+    #         user = User(message)
+    #         self.logger.info(f"текущий юзер команды /schedule: {user.first_name} @{ user.username }")
+    #         self.chat_id = user.chat_id
             
             
-            messages = self.messages["schedule"]
-            self.send_messages(chat_id=self.chat_id, messages=messages, disable_preview=True)
+    #         messages = self.messages["schedule"]
+    #         self.send_messages(chat_id=self.chat_id, messages=messages, disable_preview=True)
             
             
-            self.tell_admin(f"{ user.real_name } @{ user.username } зашёл в раздел /schedule ⏰")
-            self.logger.info(f"{ user.real_name } @{ user.username } зашёл в раздел /schedule ⏰")
+    #         self.tell_admin(f"{ user.real_name } @{ user.username } зашёл в раздел /schedule ⏰")
+    #         self.logger.info(f"{ user.real_name } @{ user.username } зашёл в раздел /schedule ⏰")
             
             
-    #? У студента будет свой раздел payment, у админа - свой
-    #? Админ будет видеть всех студенто, их суммы, доход и статусы оплат (и сколько осталось) 
-    #? Студент видит только свой статус и сумму 
+    # #? У студента будет свой раздел payment, у админа - свой
+    # #? Админ будет видеть всех студенто, их суммы, доход и статусы оплат (и сколько осталось) 
+    # #? Студент видит только свой статус и сумму 
             
-    """ /payment """
-    def set_payment(self):
-        @self.bot.message_handler(commands=["payment"], access_level=["student"])
-        def payment_command(message: Message):
-            user = User(message)
-            mongoDB = MongoDB(user.id)
-            self.chat_id = user.chat_id
+    # """ /payment """
+    # def set_payment(self):
+    #     @self.bot.message_handler(commands=["payment"], access_level=["student"])
+    #     def payment_command(message: Message):
+    #         user = User(message)
+    #         mongoDB = MongoDB(user.id)
+    #         self.chat_id = user.chat_id
             
-            payment_amount = mongoDB.get_payment_data()
+    #         payment_amount = mongoDB.get_payment_data()
             
             
             
-            messages = self.messages["payment_amount"]
-            self.format_message(chat_id=self.chat_id, message=messages, format_variable=payment_amount)
+    #         messages = self.messages["payment_amount"]
+    #         self.format_message(chat_id=self.chat_id, message=messages, format_variable=payment_amount)
             
-            self.tell_admin(f"{ user.real_name } @{ user.username } зашёл в раздел /payment 💰")
-            self.logger.info(f"{ user.real_name } @{ user.username } зашёл в раздел /payment 💰")
+    #         self.tell_admin(f"{ user.real_name } @{ user.username } зашёл в раздел /payment 💰")
+    #         self.logger.info(f"{ user.real_name } @{ user.username } зашёл в раздел /payment 💰")
            
            
-    """ ADMIN COMMANDS """
+    # """ ADMIN COMMANDS """
     
     
-    """ /clean_users """
-    def set_clean_users(self):
-        @self.bot.message_handler(commands=["clean"], access_level=["admin"])
-        def clean_users_command(message: Message):
-            user = User(message)
+    # """ /clean_users """
+    # def set_clean_users(self):
+    #     @self.bot.message_handler(commands=["clean"], access_level=["admin"])
+    #     def clean_users_command(message: Message):
+    #         user = User(message)
             
-            mongoDB = MongoDB(user.id)
-            mongoDB.clean_users()
+    #         mongoDB = MongoDB(user.id)
+    #         mongoDB.clean_users()
             
-            self.tell_admin(f"База пользователей очищена 🚮")
+    #         self.tell_admin(f"База пользователей очищена 🚮")
 
 
 

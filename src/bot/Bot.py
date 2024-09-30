@@ -19,27 +19,27 @@ class Bot:
         
         self.logger = Logger()
 
-        self.bot = None
-        self.username = None
+        self.bot_instance = None
+        self.bot_username = None
         
         self.connect_telegram()
         
 
     def connect_telegram(self) -> TeleBot:
-        self.bot = TeleBot(token=self.bot_token, use_class_middlewares=True)
+        self.bot_instance = TeleBot(token=self.bot_token, use_class_middlewares=True)
         
-        bot_name = self.get_bot_data(bot=self.bot, requested_data="first_name")
-        if self.bot:
+        bot_name = self.get_bot_data(bot=self.bot_instance, requested_data="first_name")
+        if self.bot_instance:
             self.logger.info(f"Подключаюсь к боту '{bot_name}'...")
             self.tell_admin("Начинаю работу...")
             self.tell_admin("/start")
             
-        self.username = self.get_bot_data(bot=self.bot, requested_data="username")
+        self.bot_username = self.get_bot_data(bot=self.bot_instance, requested_data="username")
         
         
     # enable bot to listening for commands
     def connect_bot(self) -> None:
-        bot_username = self.get_bot_data(bot=self.bot, requested_data="username")
+        bot_username = self.get_bot_data(bot=self.bot_instance, requested_data="username")
         self.logger.info(f"Бот @{bot_username} подключён! Нажми /start для начала")
         
         self.set_infinity_polling()
@@ -50,10 +50,10 @@ class Bot:
         environment = self.dotenv.environment
         
         if environment == "development":
-            self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
+            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
             
         else:
-            self.bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
+            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
             
 
     def get_bot_data(self, bot: TeleBot, requested_data: str) -> str:
@@ -66,34 +66,34 @@ class Bot:
     
     
     def start_bot(self) -> None:
-        self.bot.add_custom_filter(StateFilter(self.bot))
-        self.bot.add_custom_filter(IsDigitFilter())
-        self.bot.add_custom_filter(TextMatchFilter())
-        self.bot.add_custom_filter(AccessLevelFilter(self.bot))
+        self.bot_instance.add_custom_filter(StateFilter(self.bot_instance))
+        self.bot_instance.add_custom_filter(IsDigitFilter())
+        self.bot_instance.add_custom_filter(TextMatchFilter())
+        self.bot_instance.add_custom_filter(AccessLevelFilter(self.bot_instance))
 
         
-        self.bot.setup_middleware(StateMiddleware(self.bot))
+        self.bot_instance.setup_middleware(StateMiddleware(self.bot_instance))
         
         self.connect_bot()
         
         
     def disconnect_bot(self) -> None:
         """ kills the active bot instance, drops connection """
-        self.bot.stop_bot()
+        self.bot_instance.stop_bot()
         self.logger.info('бот выключен ❌')
         
     def tell_admin(self, message):
-        self.bot.send_message(chat_id=self.admin_id, text=message)
+        self.bot_instance.send_message(chat_id=self.admin_id, text=message)
         
         
-    def send_messages(self, chat_id, messages: list, disable_preview=False, parse_mode="Markdown"):
+    def send_multiple_messages(self, chat_id, messages: list, disable_preview=False, parse_mode="Markdown"):
         for message in messages:
-            self.bot.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode, disable_web_page_preview=disable_preview)
+            self.bot_instance.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode, disable_web_page_preview=disable_preview)
     
         
-    def format_message(self, chat_id, message: str, format_variable, parse_mode="Markdown"):
+    def send_formatted_message(self, chat_id, message: str, format_variable, parse_mode="Markdown"):
         formatted_message = message.format(format_variable)
-        self.bot.send_message(chat_id=chat_id, text=formatted_message, parse_mode=parse_mode)
+        self.bot_instance.send_message(chat_id=chat_id, text=formatted_message, parse_mode=parse_mode)
 
             
         
