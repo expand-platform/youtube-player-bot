@@ -1,7 +1,12 @@
+from datetime import datetime
+
 from pymongo import MongoClient
 from pymongo.collection import Collection
+
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
+
+from src.users.students import STUDENTS
 
 
 #! Нужно провести оптимизацию, чтобы мы каждый раз не подключались к базе данных
@@ -35,38 +40,13 @@ class MongoDB:
         self.logger = Logger()
         
         
-        # database
-        # self.client: MongoClient = None
-        # self.database: MongoClient = None
-        # self.users_collection: MongoClient = None
         self.users_collection: Collection = self.database['users']
-        
-        # self.connect_to_mongo()
 
         #? (возможно) это будет не нужно
         if user_id:
             self.user_id = user_id
         
-
-
-    # def connect_to_mongo(self):
-    #     DATABASE_NAME = "school-bot"
-    #     MONGO_URI = Dotenv().mongodb_string
         
-    #     self.client = MongoClient(MONGO_URI, maxPoolSize=1)
-    #     self.database = self.client[DATABASE_NAME]
-    #     self.logger.info(f"База данных {DATABASE_NAME} подключена!")
-        
-    #     # collections
-    #     self.users_collection = self.database['users']
-        # self.stats = self.database['stats']
-
-        
-    #! Презаполнить базу данных пользователями, чтобы бот работал быстрее!
-    #! Когда юзер будет нажимать команду, боту не нужно будет отправлять запрос в БД
-    #! У него будет кеш!
-        
-
     def show_users(self):        
         self.logger.info(f"Коллекция юзеров: {list(self.users_collection.find({}))}")
     
@@ -107,9 +87,6 @@ class MongoDB:
         
         self.users_collection.update_one(filter=filter_by_id, update=update_operation)
         
-        # кешируем пользователей после изменения данных
-        # Users().cache_users()
-        
         
     def get_real_name(self, id) -> str:
         filter_by_id = {'user_id' : self.user_id}
@@ -131,8 +108,48 @@ class MongoDB:
         self.users_collection.delete_many({})
         self.logger.info(f"База данных пользователей очищена! 🧹")
         
-        # кешируем пользователей после изменения данных
-        # Users().cache_users()
+
+    def save_users(self, users: list):
+        self.users_collection.insert_many(users)
+        self.logger.info(f"Пользователи сохранены в БД!")
+        
+    
+    def save_students(self):
+        self.logger.info("Записываю студентов в базу данных... 👩‍🎓")
+        
+        all_students = []
+        
+        for student in STUDENTS:
+            new_student = {
+                "real_name": student["real_name"],
+                "last_name": student["last_name"],
+                
+                "user_id": student["user_id"],
+                "chat_id": student["user_id"],
+                
+                "access_level": "student",
+                
+                "first_name": "",
+                "username": "",
+                
+                "language": "ru", 
+                
+                "payment_amount": student["payment_amount"],
+                "payment_status": False,
+
+                "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+                
+                "stats": {}, 
+            }
+            
+            all_students.append(new_student)
+        
+        self.logger.info(f"all students: {all_students}")
+            
+        
+        # сохраняем студентов балком
+        self.save_users(all_students)
+
 
 
 

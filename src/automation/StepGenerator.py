@@ -1,12 +1,14 @@
 from typing import Any
 from telebot.types import Message
 
-from src.users.Users import NewUser, Users
-from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
-from src.bot.Bot import Bot
 from src.utils.Dotenv import Dotenv
-
 from src.utils.Logger import Logger
+
+from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
+
+from src.bot.Bot import Bot
+from src.users.Users import Users
+from src.database.MongoDB import MongoDB
 
 
 
@@ -48,14 +50,20 @@ class StepGenerator:
         
         self.tell_admin = bot.tell_admin
     
-    
-    def set_start(self, 
-                access_level=["student", "admin"], 
+
+    #* generate other /slash commands 
+    def set_command(self,
+                command_name = "start",
+                access_level = ["student", "admin"], 
                 
+                set_slash_command: bool = False,
+                
+                message_text: str = None,
                 format_message: str = None, 
                 format_variable: str = None,
                 multiple_messages: list = None,
-                notification_text = "зашёл в раздел /start ✅",
+                
+                mongo_method: str = None,
                 
                 # message options
                 disable_preview = False,
@@ -63,53 +71,14 @@ class StepGenerator:
                 ):
         
         
-        @self.bot.message_handler(commands=["start"], access_level=access_level)
-        def handle_start(message: Message):
+        @self.bot.message_handler(commands=[command_name], access_level=access_level)
+        def handle_command(message: Message):
             user = Users(message=message, bot=self.bot)
             user = user.get_active_user()
             self.logger.info(f"Текущий пользователь (/start): { user }")
             
-            self.set_slash_commands(user)
-
-            
-            if format_message:
-                data_for_formatting = self.get_format_variable(format_variable, user)
-                
-                self.send_formatted_message(chat_id=user["user_id"], message=format_message, format_variable=data_for_formatting)
-                
-            if multiple_messages:
-                self.send_multiple_messages(chat_id=user["user_id"], messages=multiple_messages)
-            
-            if notification_text:
-                self.tell_admin(f"{ user["first_name"] } @{ user["username"] } {notification_text}")
-                
-            self.logger.info(f"{ user["first_name"] } {notification_text}")
-    
-
-    
-    
-    #* generate other /slash commands 
-    def set_command(self,
-                command = [""],
-                access_level = ["student", "admin"], 
-                
-                format_message: str = None, 
-                format_variable: str = None,
-                multiple_messages: list = None,
-                notification_text = "зашёл в раздел /start ✅",
-                
-                # message options
-                disable_preview = False,
-                parse_mode = "Markdown",
-                ):
-        
-        
-        @self.bot.message_handler(commands=command, access_level=access_level)
-        def handle_command(message: Message):
-            user = Users(message=message, bot=self.bot).active_user
-            self.set_slash_commands(user)
-            
-            self.logger.info(f"Текущий пользователь (/start): { user }")
+            if set_slash_command:
+                self.set_slash_commands(user)
             
             
             if format_message:
@@ -119,16 +88,24 @@ class StepGenerator:
                 
             if multiple_messages:
                 self.send_multiple_messages(chat_id=user["user_id"], messages=multiple_messages)
-            
-            if notification_text:
-                self.tell_admin(f"{ user["first_name"] } @{ user["username"] } {notification_text}")
                 
-            self.logger.info(f"{ user["first_name"] } {notification_text}")
-    
+            if message_text:
+                self.bot.send_message(chat_id=user["user_id"], text=message_text)
+                
+            #? Ну а дальше уже потом придумаю. 
+            #? Думаю тут просто будут захардкожены разные варианты событий
+            #? Типа, если оплата, сделать 1,2,3 и вывести это туда-то
+            #? Если обновить имя, то А,Б и т.д
+            if mongo_method:
+                database_method = self.choose_mongo_method()
+                database_method()
+                
+            
+            self.notify_admin(user, command_name)
+            
     
     
     #* HELPERS
-
     def set_slash_commands(self, user):
         if user["access_level"] == "guest":
             self.bot.set_my_commands([])
@@ -142,7 +119,7 @@ class StepGenerator:
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=ADMIN_SLASH_COMMANDS)
         
-        self.logger.info('slash commands with right set')
+        self.logger.info('slash commands with rights set')
     
     
     def get_format_variable(self, variable_name: Any, user: Users):
@@ -151,11 +128,21 @@ class StepGenerator:
                 return user["first_name"]
             case "user.real_name":
                 return user["real_name"]
+            case "user.payment":
+                return user["payment_amount"]
+    
+            
+    def notify_admin(self, user, command_name):
+        self.tell_admin(f"{ user["real_name"] } { user["last_name"] } { user["first_name"] } @{ user["username"] } зашёл в раздел /{command_name} ✅")
+        self.logger.info(f"{ user["first_name"] } зашёл в раздел /{command_name} ✅")
     
     
-    
-    
-    
+    def choose_mongo_method(self, method_name: Any):
+        match method_name:
+            case "payment":
+                return MongoDB.get_payment_data
+
+
     
     #* MESSAGE TYPES
     # helpers (type of step)

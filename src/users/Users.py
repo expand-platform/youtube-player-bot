@@ -1,20 +1,14 @@
-from typing import TYPE_CHECKING
-from telebot.types import Message
-from telebot import TeleBot
-# if TYPE_CHECKING:
-#     from src.bot.Bot import Bot
-    
-    
-
 from datetime import datetime
 
-from src.utils.Dotenv import Dotenv
-from src.database.MongoDB import MongoDB
+from telebot import TeleBot
+from telebot.types import Message
 
+
+from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
-
 from src.languages.Language import Language
+from src.database.MongoDB import MongoDB
 
 from src.users.students import STUDENTS
 
@@ -124,6 +118,11 @@ class NewUser:
         self.create_new_user(message)
         
         
+    #? Функционал будет похожий, только функция будет строго перебирать студентов, принимать каждого user_id и генерировать данные на основе тех, что уже есть (без username, first_name, зато с last_name, payment_amount, payment_status)
+     
+    #? Эта компашка будет собираться в массив и балком грузиться в базу данных (insert_many)
+     
+    #? Функции self.set_real_name() и self.set_access_level() не нужны - я и так знаю их уровни  
 
     def create_new_user(self, message: Message):
         self.logger.info("Регистрируем этого парня (девушку) в базе данных... 💂‍♂️")
@@ -131,16 +130,18 @@ class NewUser:
         self.real_name = self.set_real_name()
         
         self.new_user = {
+            "real_name": self.real_name,
+            "last_name": "",
+            
             "user_id": message.from_user.id,
             "chat_id": message.chat.id,
+
+            "access_level": self.access_level,
             
             "first_name":  message.chat.first_name.encode().decode('utf-8'),
             "username": message.chat.username,
             
-            "access_level": self.access_level,
-            
             "language": "ru", 
-            "real_name": self.real_name,
 
             "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             
@@ -154,9 +155,8 @@ class NewUser:
             self.new_user["payment_status"] = False
         
         
-        # сохраняем пользователя и кешируем всех пользователей после регистрации
+        # сохраняем пользователя
         self.saveUserToDB()
-        # Users().cache_users()
         
         
         
@@ -198,20 +198,7 @@ class NewUser:
 
         # if no student found...
         return None
-        
-    # def recognize_student(self):
-        # for student in STUDENTS:
-        #     if self.user_id == student["user_id"]:
-        #         self.real_name = student["real_name"]
-        #         self.logger.info(f"О, это наш студент: {self.real_name} 👨‍🎓" )
-
-        #         self.new_user["real_name"] = self.real_name
-        #         self.new_user["payment_amount"] = student["payment_amount"]
-        #         self.new_user["payment_status"] = False
-            
-        #     else:
-        #         self.logger.info(f"Ты не студент, {self.first_name}")
-                        
-
+    
+    
 
 
