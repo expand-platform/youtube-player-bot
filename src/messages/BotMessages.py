@@ -9,22 +9,27 @@ from src.database.MongoDB import MongoDB
 from src.utils.Logger import Logger
 from src.bot.States import UserStates
 from src.languages.Language import Language
-from src.users.User import User
+from src.users.Users import NewUser
 
 from src.bot.Bot import Bot
 from src.automation.StepGenerator import StepGenerator
 
-
+from src.users.Users import Users
 
 
 class BotMessages:
     def __init__(self, bot: Bot):
-        self.bot = bot.bot_instance
+        self.bot: Bot = bot.bot_instance
         self.chat_id = None
+        
+        # helpers
+        self.tell_admin = bot.tell_admin
         
         self.step_generator = StepGenerator(bot)
         self.logger = Logger()
         self.messages = Language().messages
+        
+        # self.users = Users()
         
         self.enable_slash_commands()
    
@@ -39,12 +44,13 @@ class BotMessages:
             format_variable="user.first_name",
         )
         
-        #? /start (students, admin)
+        # #? /start (students, admin)
         self.step_generator.set_start(
             access_level=["student", "admin"],
             format_message=self.messages["welcome_greeting"],
             format_variable="user.real_name",
         )
+        
         
         
         # students / admins
@@ -53,29 +59,29 @@ class BotMessages:
         # self.set_payment()
 
         # admin only
-        # self.set_clean_users()
+        self.set_clean_users()
         
         self.logger.info('слеш-команды (/) установлены ✅')
         
         
     """ /start """
-    def set_start(self):
-        @self.bot.message_handler(commands=["start"], access_level=["student", "admin"])
-        def start_command(message: Message):
-            self.set_slash_commands(message)
-            user = User(message)
-            self.chat_id = user.chat_id
+    # def set_start(self):
+    #     @self.bot.message_handler(commands=["start"], access_level=["student", "admin"])
+    #     def start_command(message: Message):
+    #         self.set_slash_commands(message)
+    #         user = NewUser(message)
+    #         self.chat_id = user.user_id
             
             
-            # greetings and commands
-            self.format_message(chat_id=self.chat_id, message=self.messages["welcome_greeting"], format_variable=user.real_name)
-            # self.format_message(chat_id=self.chat_id, message=self.messages["access_level"], format_variable=user.access_level)
+    #         # greetings and commands
+    #         self.format_message(chat_id=self.chat_id, message=self.messages["welcome_greeting"], format_variable=user.real_name)
+    #         # self.format_message(chat_id=self.chat_id, message=self.messages["access_level"], format_variable=user.access_level)
             
-            messages = self.messages["start"]
-            self.send_messages(chat_id=self.chat_id, messages=messages)
+    #         messages = self.messages["start"]
+    #         self.send_messages(chat_id=self.chat_id, messages=messages)
             
-            self.tell_admin(f"{ user.real_name } @{ user.username } нажал /start ✅")
-            self.logger.info(f"{ user.real_name } нажал /start ✅")
+    #         self.tell_admin(f"{ user.real_name } @{ user.username } нажал /start ✅")
+    #         self.logger.info(f"{ user.real_name } нажал /start ✅")
   
   
   
@@ -124,15 +130,14 @@ class BotMessages:
     
     
     # """ /clean_users """
-    # def set_clean_users(self):
-    #     @self.bot.message_handler(commands=["clean"], access_level=["admin"])
-    #     def clean_users_command(message: Message):
-    #         user = User(message)
+    def set_clean_users(self):
+        @self.bot.message_handler(commands=["clean"], access_level=["admin"])
+        def clean_users_command(message: Message):
             
-    #         mongoDB = MongoDB(user.id)
-    #         mongoDB.clean_users()
-            
-    #         self.tell_admin(f"База пользователей очищена 🚮")
+            MongoDB().clean_users()
+            self.tell_admin(f"База пользователей очищена 🚮")
+
+
 
 
 

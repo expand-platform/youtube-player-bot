@@ -12,6 +12,15 @@ from src.bot.Filters import AccessLevelFilter
 class Bot:
     """class to connect and run bot"""
 
+    _bot_instance = None
+    
+    # singleton pattern  
+    def __new__(cls, *args, **kwargs):
+        if cls._bot_instance is None:
+            cls._bot_instance = super(Bot, cls).__new__(cls)
+        return cls._bot_instance
+
+
     def __init__(self):
         self.dotenv = Dotenv()
         self.bot_token = self.dotenv.bot_token
@@ -94,18 +103,3 @@ class Bot:
     def send_formatted_message(self, chat_id, message: str, format_variable, parse_mode="Markdown"):
         formatted_message = message.format(format_variable)
         self.bot_instance.send_message(chat_id=chat_id, text=formatted_message, parse_mode=parse_mode)
-
-            
-        
-class AdsBot(Bot):
-    pass
-
-
-class SchoolBot(Bot):
-    pass
-
-
-class NotificatorBot(Bot):
-    def __init__(self):
-        super().__init__()
-        self.bot_token = Dotenv().notificator_bot_token

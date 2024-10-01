@@ -8,6 +8,7 @@ Pipfile.lock
 *.pyc
 plan.md
 todo.md
+order.md
 
 test.py
 automation.py

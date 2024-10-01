@@ -1,12 +1,15 @@
 from typing import Any
 from telebot.types import Message
 
-from src.users.User import User 
+from src.users.Users import NewUser, Users
 from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
 from src.bot.Bot import Bot
 from src.utils.Dotenv import Dotenv
 
 from src.utils.Logger import Logger
+
+
+
 
 
 
@@ -62,23 +65,25 @@ class StepGenerator:
         
         @self.bot.message_handler(commands=["start"], access_level=access_level)
         def handle_start(message: Message):
-            #? Надеюсь, в будущем не будет проблем из-за одинакового названия функции 
-            #? Если что, напишу helper-fn-name-generator
-            self.set_slash_commands(message)
-            user = User(message)
+            user = Users(message=message, bot=self.bot)
+            user = user.get_active_user()
+            self.logger.info(f"Текущий пользователь (/start): { user }")
+            
+            self.set_slash_commands(user)
+
             
             if format_message:
                 data_for_formatting = self.get_format_variable(format_variable, user)
                 
-                self.send_formatted_message(chat_id=user.chat_id, message=format_message, format_variable=data_for_formatting)
+                self.send_formatted_message(chat_id=user["user_id"], message=format_message, format_variable=data_for_formatting)
                 
             if multiple_messages:
-                self.send_multiple_messages(chat_id=user.chat_id, messages=multiple_messages)
+                self.send_multiple_messages(chat_id=user["user_id"], messages=multiple_messages)
             
             if notification_text:
-                self.tell_admin(f"{ user.first_name } @{ user.username } {notification_text}")
+                self.tell_admin(f"{ user["first_name"] } @{ user["username"] } {notification_text}")
                 
-            self.logger.info(f"{ user.first_name } {notification_text}")
+            self.logger.info(f"{ user["first_name"] } {notification_text}")
     
 
     
@@ -101,55 +106,52 @@ class StepGenerator:
         
         @self.bot.message_handler(commands=command, access_level=access_level)
         def handle_command(message: Message):
-            #? Надеюсь, в будущем не будет проблем из-за одинакового названия функции 
-            #? Если что, напишу helper-fn-name-generator
-            # self.set_slash_commands(message)
-            user = User(message)
+            user = Users(message=message, bot=self.bot).active_user
+            self.set_slash_commands(user)
+            
+            self.logger.info(f"Текущий пользователь (/start): { user }")
+            
             
             if format_message:
                 data_for_formatting = self.get_format_variable(format_variable, user)
                 
-                self.send_formatted_message(chat_id=user.chat_id, message=format_message, format_variable=data_for_formatting)
+                self.send_formatted_message(chat_id=user["user_id"], message=format_message, format_variable=data_for_formatting)
                 
             if multiple_messages:
-                self.send_multiple_messages(chat_id=user.chat_id, messages=multiple_messages)
+                self.send_multiple_messages(chat_id=user["user_id"], messages=multiple_messages)
             
             if notification_text:
-                self.tell_admin(f"{ user.first_name } @{ user.username } {notification_text}")
+                self.tell_admin(f"{ user["first_name"] } @{ user["username"] } {notification_text}")
                 
-            self.logger.info(f"{ user.first_name } {notification_text}")
+            self.logger.info(f"{ user["first_name"] } {notification_text}")
     
-    
-    
-
     
     
     #* HELPERS
 
-    def set_slash_commands(self, message):
-        user = User(message)
-        
-        if user.access_level == "guest":
+    def set_slash_commands(self, user):
+        if user["access_level"] == "guest":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
         
-        elif user.access_level == "student":
+        elif user["access_level"] == "student":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
             
-        elif user.access_level == "admin":
+        elif user["access_level"] == "admin":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=ADMIN_SLASH_COMMANDS)
         
         self.logger.info('slash commands with right set')
     
     
-    def get_format_variable(self, variable_name: Any, user: User):
+    def get_format_variable(self, variable_name: Any, user: Users):
         match variable_name:
             case "user.first_name":
-                return user.first_name
+                return user["first_name"]
             case "user.real_name":
-                return user.real_name
+                return user["real_name"]
+    
     
     
     
