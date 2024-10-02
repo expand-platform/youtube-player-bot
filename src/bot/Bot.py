@@ -100,6 +100,6 @@ class Bot:
             self.bot_instance.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode, disable_web_page_preview=disable_preview)
     
         
-    def send_formatted_message(self, chat_id, message: str, format_variable, parse_mode="Markdown"):
+    def send_message_with_variable(self, chat_id, message: str, format_variable, parse_mode="Markdown"):
         formatted_message = message.format(format_variable)
         self.bot_instance.send_message(chat_id=chat_id, text=formatted_message, parse_mode=parse_mode)

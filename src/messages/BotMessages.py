@@ -36,7 +36,8 @@ class BotMessages:
         
     def enable_slash_commands(self):
         """ clears and sets slash commands """
-        #? Guests
+        
+        #* Guests
         #? /start
         self.step_generator.set_command(
             command_name="start",
@@ -49,7 +50,8 @@ class BotMessages:
         )
         
         
-        #? Students 
+        
+        #* Students 
         #? /start 
         self.step_generator.set_command(
             command_name="start",
@@ -77,39 +79,63 @@ class BotMessages:
             access_level=["student", "admin"], 
             
             format_message=self.messages["payment_amount"],
-            format_variable="user.payment",
+            format_variable="user.payment_amount",
         )
         
+        #? /zoom
+        self.step_generator.set_command(
+            command_name="zoom",
+            access_level=["student", "admin"], 
+            
+            message_text=self.messages["zoom"]
+        )
+        
+        
+        #* (процесс из 3 этапов)
+        #* Сначала поработать с кешем (+1 к done_lessons, но не больше, чем max_lessons)
+        #* А затем отправить изменения в БД 
+        #* И затем закешировать новые данные из БД локально 
+        
+        #? делаем команду /done
+        self.step_generator.set_command(
+            command_name="lessons",
+            access_level=["student"], 
+            
+            messages_for_formatting=[self.messages["lessons_left"]],
+            variables_for_formatting=["user.lessons_left"],
+        )
+        
+        self.step_generator.set_command(
+            command_name="done",
+            access_level=["student"], 
+            
+            messages_for_formatting=[self.messages["done"], self.messages["lessons_left"]],
+            variables_for_formatting=["user.real_name", "user.done"],
+            
+            mongodb_method_name="update_lessons",
+            mongodb_activation_position="after_messages",
+        )
+        
+    
+        #* Admin
+        #? /clean
+        self.step_generator.set_admin_command(
+            command_name="clean",
+        )
 
-        #? Admin
-        self.set_clean_users()
-        self.fill_database()
+        #? /fill
+        self.step_generator.set_admin_command(
+            command_name="fill",
+        )
+        
         
         self.logger.info('слеш-команды (/) установлены ✅')
-        
         
     
     # #? У студента будет свой раздел payment, у админа - свой
     # #? Админ будет видеть всех студенто, их суммы, доход и статусы оплат (и сколько осталось) 
     # #? Студент видит только свой статус и сумму 
             
-           
-    #? ADMIN COMMANDS 
-    # """ /clean_users """
-    def set_clean_users(self):
-        @self.bot.message_handler(commands=["clean"], access_level=["admin"])
-        def clean_users_command(message: Message):
-            
-            MongoDB().clean_users()
-            self.tell_admin(self.messages["clean_success"])
-
-
-    def fill_database(self):
-        @self.bot.message_handler(commands=["fill"], access_level=["admin"])
-        def clean_users_command(message: Message):
-            
-            MongoDB().save_students()
-            self.tell_admin(self.messages["fill_success"])
 
 
 

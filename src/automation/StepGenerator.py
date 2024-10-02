@@ -10,30 +10,13 @@ from src.bot.Bot import Bot
 from src.users.Users import Users
 from src.database.MongoDB import MongoDB
 
-
-
-
-
-
-
-# Генерируем шаги, исходя из заданных критериев (step generator factory)
-
-#? Данные, которые понадобятся для шага:
-
-#? - access_level (always exists, one or multiple [array])
-#? - next step (if exists, [State] or [next_step] or [register_next_step_handler] (preferred))
-#? - User information (for tell admin especially, [class User])
-#? - notify admin (if needed [text message], [User info])
-#? - database update (if exists, [class MongoDB] if exists, [MongoDB method to use] if needed)
-#? - custom send_message methods: [format_message], [send_messages]
+from src.languages.Language import Language
 
 
 #? General approach is next: 
 #? 1) Generate /slash-command
 #? 2) generate next_handler of some type (if needed)  
 #? 3) generate next_handler(s) (if needed) (multiple handlers)  
-
-#* 3 types of users: "guest", "student", "admin" 
 
 
 class StepGenerator:
@@ -46,7 +29,7 @@ class StepGenerator:
         
         #* helpers
         self.send_multiple_messages = bot.send_multiple_messages
-        self.send_formatted_message = bot.send_formatted_message
+        self.send_message_with_variable = bot.send_message_with_variable
         
         self.tell_admin = bot.tell_admin
     
@@ -59,88 +42,193 @@ class StepGenerator:
                 set_slash_command: bool = False,
                 
                 message_text: str = None,
-                format_message: str = None, 
-                format_variable: str = None,
                 multiple_messages: list = None,
                 
-                mongo_method: str = None,
+                format_message: str = None, 
+                format_variable: str = None,
                 
-                # message options
-                disable_preview = False,
-                parse_mode = "Markdown",
+                messages_for_formatting: list = None,
+                variables_for_formatting: list = None,
+                
+                mongodb_method_name: str = None,
+                mongodb_activation_position: str = None,  # "before_messages", "after_messages"
+                
+                
+                custom_function_name: str = None,
+                custom_command_position: int = 1,
                 ):
-        
+
         
         @self.bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
-            user = Users(message=message, bot=self.bot)
+            user = Users(message=message)
             user = user.get_active_user()
             self.logger.info(f"Текущий пользователь (/start): { user }")
+            
+            #? Я забыл тут обновить данные тут, надо добавить вытяжки из кеша
+            #? И каким-то образом достать здесь данные
+            
+            # run custom functions
+            # if custom_command_position == 1 and custom_function_name:
+                # self.run_custom_functions(method_name="update_lessons")
+                
             
             if set_slash_command:
                 self.set_slash_commands(user)
             
             
             if format_message:
-                data_for_formatting = self.get_format_variable(format_variable, user)
+                self.send_formatted_message(message_to_format=format_message, formatting_variable=format_variable, user=user)
                 
-                self.send_formatted_message(chat_id=user["user_id"], message=format_message, format_variable=data_for_formatting)
+            # multiple formatting messages
+            if messages_for_formatting and variables_for_formatting:
+                self.send_multiple_formatted_messages(messages=messages_for_formatting, formatting_variables=variables_for_formatting, user=user)
+                
                 
             if multiple_messages:
                 self.send_multiple_messages(chat_id=user["user_id"], messages=multiple_messages)
                 
+                
             if message_text:
                 self.bot.send_message(chat_id=user["user_id"], text=message_text)
                 
-            #? Ну а дальше уже потом придумаю. 
-            #? Думаю тут просто будут захардкожены разные варианты событий
-            #? Типа, если оплата, сделать 1,2,3 и вывести это туда-то
-            #? Если обновить имя, то А,Б и т.д
-            if mongo_method:
-                database_method = self.choose_mongo_method()
-                database_method()
-                
+            if mongodb_activation_position == "after_messages" and mongodb_method_name:
+                self.choose_mongo_method(method_name=mongodb_method_name, message=message)
             
             self.notify_admin(user, command_name)
+    
+    
+    
+    #? ADMIN COMMANDS 
+    def set_admin_command(self, 
+                        command_name: str = None,
+                        message_suffix: str = "_success", 
+                        # нужно называть сообщения в стиле "fill_success, clean_success" 
+                        ):
+        @self.bot.message_handler(commands=[command_name], access_level=["admin"])
+        def set_admin_command(message: Message):
+            self.choose_mongo_method(method_name=command_name, message=message)
+            
+            messages = Language().messages
+            self.tell_admin(message=messages[command_name + message_suffix])
+            
             
     
-    
     #* HELPERS
+    def notify_admin(self, user, command_name):
+        self.tell_admin(f"{ user["real_name"] } { user["last_name"] } { user["first_name"] } @{ user["username"] } зашёл в раздел /{command_name} ✅")
+        self.logger.info(f"{ user["first_name"] } зашёл в раздел /{command_name} ✅")
+    
+    
     def set_slash_commands(self, user):
         if user["access_level"] == "guest":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
         
-        elif user["access_level"] == "student":
+        if user["access_level"] == "student":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
             
-        elif user["access_level"] == "admin":
+        if user["access_level"] == "admin":
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=ADMIN_SLASH_COMMANDS)
         
         self.logger.info('slash commands with rights set')
     
     
+    
     def get_format_variable(self, variable_name: Any, user: Users):
         match variable_name:
-            case "user.first_name":
-                return user["first_name"]
             case "user.real_name":
                 return user["real_name"]
-            case "user.payment":
-                return user["payment_amount"]
-    
             
-    def notify_admin(self, user, command_name):
-        self.tell_admin(f"{ user["real_name"] } { user["last_name"] } { user["first_name"] } @{ user["username"] } зашёл в раздел /{command_name} ✅")
-        self.logger.info(f"{ user["first_name"] } зашёл в раздел /{command_name} ✅")
+            case "user.first_name":
+                return user["first_name"]
+            
+            case "user.payment_amount":
+                return user["payment_amount"]
+            
+            case "user.lessons_left":
+                return user["lessons_left"]
+                
+            case "user.done":
+                if user["lessons_left"] > 0:
+                    return user["lessons_left"] - 1
+                
+                else: return 0  # when zero lessons left
+            
     
+    def send_formatted_message(self, message_to_format, formatting_variable, user):
+        data_for_formatting = self.get_format_variable(formatting_variable, user)
+                
+        self.send_message_with_variable(chat_id=user["user_id"], message=message_to_format, format_variable=data_for_formatting)
+
+
+    def send_multiple_formatted_messages(self, messages, formatting_variables, user):
+        #* Для каждой переменной вызывать функцию get_format_variable, результаты сохранять в массив
+        #* Затем вызывать функцию send_formatted_message столько раз, сколько элементов в массиве
+        formatting_data = []
+        
+        for variable in formatting_variables:
+            data = self.get_format_variable(variable, user)
+            formatting_data.append(data)
+        
+        self.logger.info(f"formatting_data: { formatting_data }")
+        
+        for message, format_data in zip(messages, formatting_data):
+            # self.logger.info(f"message: { message }")
+            # self.logger.info(f"format_data: { format_data }")
+            self.send_message_with_variable(chat_id=user["user_id"], message=message, format_variable=format_data)
+            
+        self.logger.info(f"send_multiple_formatted_messages done 🥙")
+        
     
-    def choose_mongo_method(self, method_name: Any):
+    def choose_mongo_method(self, method_name: str, message: Message):
         match method_name:
-            case "payment":
-                return MongoDB.get_payment_data
+            case "clean":
+                MongoDB().clean_users()
+                Users(message)
+            
+            case "fill":
+                MongoDB().save_students()
+                Users(message)
+                
+            case "update_lessons":
+                #* Процесс состоит из 3 этапов:
+                    #* Сначала поработать с кешем (+1 к done_lessons, но не больше, чем max_lessons)
+                    #* А затем отправить изменения в БД 
+                    #* И затем закешировать новые данные из БД локально 
+                
+                self.logger.info(f"updating_lessons...")
+                
+                [lessons_left, done_lessons] = Users(message).get_lessons_left_from_cache()
+                self.logger.info(f"lessons_left: { lessons_left }")
+                self.logger.info(f"done_lessons: { done_lessons }")
+                
+                MongoDB(message.from_user.id).update_user_data(key="lessons_left", new_value=lessons_left)
+                MongoDB(message.from_user.id).update_user_data(key="done_lessons", new_value=done_lessons)
+                
+                self.logger.info(f"mongoDB updated with new lessons! ✅")
+                
+                Users(message)
+                
+                self.logger.info(f"Cached users updated! ✅")
+                
+
+    def run_custom_functions(self, method_name: str, message: Message, user):
+        match method_name:
+            case "update_lessons":
+                #* Процесс состоит из 3 этапов:
+                    #* Сначала поработать с кешем (+1 к done_lessons, но не больше, чем max_lessons)
+                    #* А затем отправить изменения в БД 
+                    #* И затем закешировать новые данные из БД локально 
+                
+                [lessons_left, done_lessons] = Users(message).get_lessons_left_from_cache()
+                
+                MongoDB(message.from_user.id).update_user_data(key="lessons_left", new_value=lessons_left)
+                MongoDB(message.from_user.id).update_user_data(key="done_lessons", new_value=done_lessons)
+                
+                Users(message)
 
 
     

@@ -8,7 +8,6 @@ from src.utils.Dotenv import Dotenv
 
 from src.users.students import STUDENTS
 
-
 #! Нужно провести оптимизацию, чтобы мы каждый раз не подключались к базе данных
 #! Или делали это как можно реже
 
@@ -16,11 +15,6 @@ from src.users.students import STUDENTS
 class MongoDB:
     _mongoDB_instance = None
     
-    # def __new__(cls, *args, **kwargs):
-    #     if cls._mongoDB_instance is None:
-    #         cls._mongoDB_instance = super(MongoDB, cls).__new__(cls)
-    #     return cls._mongoDB_instance
-
     def __new__(cls, *args, **kwargs):
         DATABASE_NAME = "school-bot"
         MONGO_URI = Dotenv().mongodb_string
@@ -39,10 +33,8 @@ class MongoDB:
     def __init__(self, user_id: int = None) -> None:
         self.logger = Logger()
         
-        
         self.users_collection: Collection = self.database['users']
 
-        #? (возможно) это будет не нужно
         if user_id:
             self.user_id = user_id
         
@@ -52,7 +44,7 @@ class MongoDB:
     
     
     def get_all_users(self):        
-        self.show_users()
+        # self.show_users()
         return list(self.users_collection.find({}))
         
         
@@ -81,13 +73,13 @@ class MongoDB:
         self.users_collection.update_one(filter=filter_by_id, update=update_operation)
         
         
-    def update_user(self, key, new_value):
+    def update_user_data(self, key, new_value):
         filter_by_id = {'user_id' : self.user_id}
         update_operation = { '$set': { key : new_value } }
         
         self.users_collection.update_one(filter=filter_by_id, update=update_operation)
         
-        
+    
     def get_real_name(self, id) -> str:
         filter_by_id = {'user_id' : self.user_id}
         user = self.users_collection.find_one(filter=filter_by_id)
@@ -113,6 +105,7 @@ class MongoDB:
         self.users_collection.insert_many(users)
         self.logger.info(f"Пользователи сохранены в БД!")
         
+        
     
     def save_students(self):
         self.logger.info("Записываю студентов в базу данных... 👩‍🎓")
@@ -136,6 +129,10 @@ class MongoDB:
                 
                 "payment_amount": student["payment_amount"],
                 "payment_status": False,
+                
+                "max_lessons": student["max_lessons"],
+                "done_lessons": 0,
+                "lessons_left": student["max_lessons"],
 
                 "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
                 

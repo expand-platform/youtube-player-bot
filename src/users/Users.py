@@ -24,18 +24,16 @@ from src.users.students import STUDENTS
 
 class Users:
     """ manage all users in DB"""
-    def __init__(self, message: Message = None, bot: TeleBot = None):
+    def __init__(self, message: Message = None):
         self.logger = Logger()
         self.mongoDB: MongoDB = MongoDB()
         
         self.cached_users = self.cache_users()
         
         self.user_id = message.from_user.id
-            
         self.logger.info(f"self.user_id: {self.user_id}")
-        
-
         self.active_user = None
+        
         
         
         
@@ -45,15 +43,15 @@ class Users:
             self.active_user = self.find_user_in_cache()
             
             
-            if self.find_user_in_cache() is None and message and bot:
+            if self.find_user_in_cache() is None and message:
                 self.is_saved_once = False
-                self.active_user = self.save_new_user(message=message, bot=bot)
+                self.active_user = self.save_new_user(message=message)
                 self.cached_users = self.cache_users()
 
         # if user isn't in cache
-        if self.active_user is None and message and bot:
+        if self.active_user is None and message:
             self.is_saved_once = False
-            self.active_user = self.save_new_user(message=message, bot=bot)
+            self.active_user = self.save_new_user(message=message)
             self.cached_users = self.cache_users()
         
     
@@ -65,30 +63,28 @@ class Users:
     
     def cache_users(self):
         cached_users = self.mongoDB.get_all_users()
-        self.logger.info(f"users saved in cache: {cached_users}")
+        # self.logger.info(f"users saved in cache: {cached_users}")
         
         return cached_users
         
         
     def find_user_in_cache(self):
-        self.logger.info(f"Users.find_user_in_cache")
+        # self.logger.info(f"Users.find_user_in_cache")
         
         for user in self.cached_users:
-            self.logger.info(f"user: {user}, {self.user_id}, {user["user_id"]}")
+            # self.logger.info(f"user: {user}, {self.user_id}, {user["user_id"]}")
             
             if user["user_id"] == self.user_id:
                 self.logger.info(f"user exists in cache: {user}")
                 return user
-            
+
         # else... (if user isn't found in cache)
         self.logger.info(f"user isn't in cache!")
         return None
             
         
-    def save_new_user(self, message: Message, bot: TeleBot):
+    def save_new_user(self, message: Message):
         self.logger.info(f"saving new user... (Users.save_new_user)")
-        
-        # bot.send_message(chat_id=self.user_id, text=Language().messages["create_account"])
         
         new_user = NewUser(message).new_user
         self.logger.info(f"новый юзер (Users.get_user): {new_user}")
@@ -100,6 +96,18 @@ class Users:
         return new_user #* В идеале NewUser должен срабатывать только здесь, только один раз
         
 
+    def get_lessons_left_from_cache(self):
+        # self.logger.info(f"self.active_user (Users.get_lessons_left_from_cache): { self.active_user }")
+        
+        if self.active_user["done_lessons"] < self.active_user["max_lessons"]:
+            self.active_user["done_lessons"] += 1
+        
+        if self.active_user["lessons_left"] > 0:
+            self.active_user["lessons_left"] -= 1
+
+        # self.logger.info(f"self.active_user (Users.get_lessons_left_from_cache): { self.active_user }")
+        
+        return [self.active_user["lessons_left"], self.active_user["done_lessons"]]
 
 
 class NewUser:
@@ -117,12 +125,6 @@ class NewUser:
         
         self.create_new_user(message)
         
-        
-    #? Функционал будет похожий, только функция будет строго перебирать студентов, принимать каждого user_id и генерировать данные на основе тех, что уже есть (без username, first_name, зато с last_name, payment_amount, payment_status)
-     
-    #? Эта компашка будет собираться в массив и балком грузиться в базу данных (insert_many)
-     
-    #? Функции self.set_real_name() и self.set_access_level() не нужны - я и так знаю их уровни  
 
     def create_new_user(self, message: Message):
         self.logger.info("Регистрируем этого парня (девушку) в базе данных... 💂‍♂️")
@@ -152,6 +154,9 @@ class NewUser:
         
         if is_student:
             self.new_user["payment_amount"] = is_student["payment_amount"]
+            self.new_user["max_lessons"] = is_student["max_lessons"]
+            
+            self.new_user["done_lessons"] = 0
             self.new_user["payment_status"] = False
         
         

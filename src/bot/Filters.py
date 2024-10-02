@@ -14,7 +14,7 @@ class AccessLevelFilter(AdvancedCustomFilter):
         
 
     def check(self, message, access_level):
-        user = Users(message=message, bot=self.bot)
+        user = Users(message=message)
         self.logger.info(f"Текущий пользователь (Filter.py): { user }")
         self.logger.info(f"Текущий пользователь (Filter.py): { user.active_user }")
 
