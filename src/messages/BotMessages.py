@@ -73,6 +73,14 @@ class BotMessages:
             multiple_messages=self.messages["schedule"],
         )
         
+        #? /zoom
+        self.step_generator.set_command(
+            command_name="zoom",
+            access_level=["student", "admin"], 
+            
+            message_text=self.messages["zoom"]
+        )
+        
         #? /payment 
         self.step_generator.set_command(
             command_name="payment",
@@ -81,13 +89,12 @@ class BotMessages:
             format_message=self.messages["payment_amount"],
             format_variable="user.payment_amount",
         )
-        
-        #? /zoom
+        #? /card
         self.step_generator.set_command(
-            command_name="zoom",
-            access_level=["student", "admin"], 
+            command_name="card",
+            access_level=["student"], 
             
-            message_text=self.messages["zoom"]
+            multiple_messages=self.messages["card"]
         )
         
         
