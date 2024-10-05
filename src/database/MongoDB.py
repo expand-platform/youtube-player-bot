@@ -6,7 +6,7 @@ from pymongo.collection import Collection
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
 
-from src.users.students import STUDENTS
+from src.users.students import STUDENT_LIST
 
 #! Нужно провести оптимизацию, чтобы мы каждый раз не подключались к базе данных
 #! Или делали это как можно реже
@@ -60,7 +60,7 @@ class MongoDB:
             return False
         
         
-    def save_user(self, new_user) -> None:
+    def save_user_to_db(self, new_user) -> None:
         self.users_collection.insert_one(new_user)
         
         self.logger.info(f"Пользователь {new_user["first_name"]} с id {new_user["user_id"]} сохранён в Монго! 🎯")
@@ -112,7 +112,7 @@ class MongoDB:
         
         all_students = []
         
-        for student in STUDENTS:
+        for student in STUDENT_LIST:
             new_student = {
                 "real_name": student["real_name"],
                 "last_name": student["last_name"],

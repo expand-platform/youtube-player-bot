@@ -1,17 +1,153 @@
 from datetime import datetime
 
-from telebot import TeleBot
+# from telebot import TeleBot
 from telebot.types import Message
 
 
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
-from src.languages.Language import Language
+# from src.languages.Language import Language
 from src.database.MongoDB import MongoDB
 
-from src.users.students import STUDENTS
+from src.users.types import GuestT, AdminT, StudentT
+from src.users.students import STUDENT_LIST
 
+
+
+class NewUser:
+    """ base class for adding new users to DB """
+    def __init__(self, message: Message):
+        self.message = message
+        self.user_id = message.chat.id
+        
+        self.mongodb = MongoDB(self.user_id)
+    
+
+    def save_to_database(self):
+        new_guest: GuestT = {
+            "first_name":  self.message.chat.first_name.encode().decode('utf-8'),
+            "username": self.message.chat.username,
+            
+            "user_id": self.message.from_user.id,
+            "chat_id": self.message.chat.id,
+
+            "access_level": "guest",
+            "language": "ru", 
+
+            "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+        }
+        
+        self.mongodb.save_user_to_db(new_guest)
+        
+
+    
+class NewGuest(NewUser):
+    def __init__(self, message: Message):
+        super().__init__(message)
+    
+    
+class NewAdmin(NewUser):
+    def __init__(self, message: Message):
+        super().__init__(message)
+        self.admin_id = Dotenv().admin_id
+        
+        
+    def save_to_database(self):
+        new_admin: AdminT = {
+            "real_name": "Дамир",
+            "username": "@best_prepod",
+            
+            "user_id": self.admin_id,
+            "chat_id": self.admin_id,
+            
+            "access_level": "admin",
+            
+            "language": "ru", 
+            "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+        }
+        
+        self.mongodb.save_user_to_db(new_admin)
+    
+    
+class NewStudent(NewUser):
+    def __init__(self, message: Message, 
+                  real_name: str,
+                  last_name: str,
+                  user_id: str,
+                  payment_amount: int,
+                  max_lessons: int,
+                ):
+        super().__init__(message)
+        
+        self.real_name = real_name
+        self.last_name = last_name
+        self.user_id = user_id
+        self.payment_amount = payment_amount
+        self.max_lessons = max_lessons    
+            
+        
+    def save_to_database(self):
+        new_student: StudentT = {
+            "real_name": self.real_name,
+            "last_name": self.last_name,
+            
+            "user_id": self.user_id,
+            "chat_id": self.user_id,
+            
+            "access_level": "student",
+            
+            "payment_amount": self.payment_amount,
+            "payment_status": False,
+            
+            "max_lessons": self.max_lessons,
+            "done_lessons": 0,
+            "lessons_left": self.max_lessons,
+
+            "language": "ru", 
+            "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+            
+            "stats": {},
+        }
+        
+        self.mongodb.save_user_to_db(new_student)
+
+
+# USERS
+# save admin
+# save students
+# handle guest and others (not explicitly)
+
+class Users_: # 2
+    """ #? Скорее всего, эту логику нужно поместить в MongoDB """
+    
+    
+    def save_admin(self):
+        pass
+    def save_students(self):
+        pass
+
+        
+
+class Students:
+    def __init__(self):
+        self.student_ids = Dotenv().student_ids
+        
+        self.link_id_to_students()
+        
+        
+    def link_id_to_students(self):
+        for id, student in zip(self.student_ids, STUDENT_LIST):
+            self.logger.info(f"id {id} belongs to student: {student}")
+            
+            student["user_id"] = id
+            
+        
+    def create_new_student(self):
+        pass
+            
+    
+            
 
 
 class Users:
@@ -164,7 +300,7 @@ class NewUser:
         is_user_exits = mongoDB.check_if_user_exists()
         
         if not is_user_exits:
-            MongoDB().save_user(self.new_user)
+            MongoDB().save_user_to_db(self.new_user)
 
 
     def set_access_level(self):
@@ -189,7 +325,7 @@ class NewUser:
         
         
     def recognize_student(self):
-        for student in STUDENTS:
+        for student in STUDENT_LIST:
             if self.user_id == student["user_id"]:
                 return student
 
