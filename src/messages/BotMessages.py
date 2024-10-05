@@ -1,20 +1,20 @@
-from telebot import TeleBot
+# from telebot import TeleBot
 from telebot.states.sync.context import StateContext
-from telebot.types import Message
+# from telebot.types import Message
 
-from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
+# from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
 
-from src.messages.InlineKeyboard import InlineKeyboard
-from src.database.MongoDB import MongoDB
+# from src.messages.InlineKeyboard import InlineKeyboard
+# from src.database.MongoDB import MongoDB
 from src.utils.Logger import Logger
-from src.bot.States import UserStates
+# from src.bot.States import UserStates
 from src.languages.Language import Language
-from src.users.Users import NewUser
+# from src.users.Users import NewUser
 
 from src.bot.Bot import Bot
 from src.automation.StepGenerator import StepGenerator
 
-from src.users.Users import Users
+# from src.users.Users import Users
 
 
 class BotMessages:
@@ -80,30 +80,27 @@ class BotMessages:
             
             message_text=self.messages["zoom"]
         )
+       
+        #? /map
+        self.step_generator.set_command(
+            command_name="map",
+            access_level=["student", "admin"], 
+            
+            message_text=self.messages["map"]
+        )
         
         #? /payment 
         self.step_generator.set_command(
             command_name="payment",
-            access_level=["student", "admin"], 
+            access_level=["student"], 
             
             format_message=self.messages["payment_amount"],
             format_variable="user.payment_amount",
-        )
-        #? /card
-        self.step_generator.set_command(
-            command_name="card",
-            access_level=["student"], 
             
-            multiple_messages=self.messages["card"]
+            multiple_messages=self.messages["payment_details"]
         )
         
-        
-        #* (процесс из 3 этапов)
-        #* Сначала поработать с кешем (+1 к done_lessons, но не больше, чем max_lessons)
-        #* А затем отправить изменения в БД 
-        #* И затем закешировать новые данные из БД локально 
-        
-        #? делаем команду /done
+        #? /lessons
         self.step_generator.set_command(
             command_name="lessons",
             access_level=["student"], 
@@ -112,6 +109,7 @@ class BotMessages:
             variables_for_formatting=["user.lessons_left"],
         )
         
+        #? /done
         self.step_generator.set_command(
             command_name="done",
             access_level=["student"], 

@@ -4,7 +4,7 @@ from telebot.types import Message
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
-from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
+from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS
 
 from src.bot.Bot import Bot
 from src.users.Users import Users
@@ -90,7 +90,7 @@ class StepGenerator:
                 
                 
             if message_text:
-                self.bot.send_message(chat_id=user["user_id"], text=message_text)
+                self.bot.send_message(chat_id=user["user_id"], text=message_text, parse_mode="Markdown")
                 
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
                 self.choose_mongo_method(method_name=mongodb_method_name, message=message)
@@ -125,15 +125,13 @@ class StepGenerator:
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
         
-        if user["access_level"] == "student":
+        # if "student" or "admin"
+        else:
             self.bot.set_my_commands([])
             self.bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
             
-        if user["access_level"] == "admin":
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=ADMIN_SLASH_COMMANDS)
         
-        self.logger.info('slash commands with rights set')
+        self.logger.info('slash commands set: /')
     
     
     

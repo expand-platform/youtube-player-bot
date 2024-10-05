@@ -5,11 +5,12 @@ BOT_SETTINGS_RU = {
 
 BOT_COMMANDS_RU = {
     "start": "Все команды бота",
+    
     "schedule": "Когда мой урок?",
     "zoom": "Ссылка на Zoom",
+    "map": "План-карта",
     
-    "payment": "Оплата",
-    "card": "Номер карты для оплаты",
+    "payment": "Реквизиты и оплата",
     "lessons": "Остаток уроков",
     
     "done": "Заполнить отчёт",
@@ -37,10 +38,10 @@ BOT_MESSAGES_RU = {
 """
 /schedule Когда следующий урок?
 /zoom  Ссылка для Zoom
+/map  План-карта
 
-/payment Сумма к оплате
+/payment Реквизиты и оплата
 /lessons Остаток уроков
-/card Реквизиты для оплаты
 
 /done Заполнить отчёт
 """
@@ -81,22 +82,37 @@ BOT_MESSAGES_RU = {
 Прислать ссылку для Zoom? 
 Нажми /zoom"""
 ],
+
+"map": [
+"""
+Первый уровень: фронтенд
+План-карта по *JavaScript*  
+https://www.expandplatform.com/web/  
+
+Второй уровень: GUI и бекенд
+План-карта по *Python*  
+https://www.expandplatform.com/python/  
+
+Третий уровень: фулл-стек
+Разработка *сервисов*  
+https://www.expandplatform.com/services/
+""",  
+],
     
 "payment_amount": """
 Цена за этот месяц: {} грн
-
-Реквизиты смотри в /card
 """,
-"payment_status": "Ты (уже оплатил / ещё не оплатил) {} уроки в этом месяце",
 
-"card": [
+"payment_details": [
 "Карты для оплаты:",
 "Приватбанк (Лукьяненко О.):",
 "5457 0825 1846 9775",
 "Монобанк (Лукьяненко Д.)",
 "5375 4114 3011 2057",
-"Сумму смотри в /payment",
+"Остаток уроков смотри в /lessons",
 ],
+
+"payment_status": "Ты (уже оплатил / ещё не оплатил) {} уроки в этом месяце",
 
 "zoom": """Ссылка для встречи в Zoom:
 https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
