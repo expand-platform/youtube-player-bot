@@ -1,17 +1,33 @@
 from fastapi import FastAPI
-
+from contextlib import asynccontextmanager
 
 import uvicorn
+
 from os import getenv
 
 from src.utils.Logger import Logger 
 from src.bot.Bot import Bot
 from src.messages.BotMessages import BotMessages
+from src.database.MongoDB import MongoDB
+from src.users.initial.InitialUsers import InitialUsers 
 
 
-def main(app: FastAPI):
+@asynccontextmanager
+async def main(app: FastAPI):
     logger = Logger()
-    logger.info('сервер FastAPI включён 👀')
+    mongoDB = MongoDB()
+    
+    logger.info('сервер FastAPI / uvicorn включён 👀')
+    
+    initial_users = InitialUsers().pin_ids_to_users()
+    
+    
+    # checks and saves admins and students
+    # mongoDB.clean_users()
+    mongoDB.check_initial_users_in_db()
+    
+    # cache users in memory for faster bot responses
+    
 
     #? Тут будет примерно следующий порядок:
     #? 1) Инициализируется Mongo, вносит в БД пользователей (если нужно, т.к. там уже могут быть пользователи). Кажется, insert_one не будет делать это, если юзер уже есть в БД. Если же нет, делаем проверку is_user_exists()
@@ -22,14 +38,17 @@ def main(app: FastAPI):
     #? 2) Кешируем их
     #? 3) Запускаем бота с этими данными (кеш должен быть доступен в других местах, это важно). Вероятно, тут его импорта не будет или же он просто будет импортится из одного файла в разные места (чтобы избежать circular import)
 
+    yield
+    logger.info('сервер выключен ❌')
+    
+    
 
     # set commands and message handlers
-    school_bot = Bot()
-    BotMessages(school_bot)
-    school_bot.start_bot()
+    # school_bot = Bot()
+    # BotMessages(school_bot)
+    # school_bot.start_bot()
     
-    school_bot.disconnect_bot()
-    logger.info('сервер выключен ❌')
+    # school_bot.disconnect_bot()
     
 
 app = FastAPI(lifespan=main)

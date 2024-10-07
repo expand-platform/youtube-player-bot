@@ -24,7 +24,7 @@ class Bot:
     def __init__(self):
         self.dotenv = Dotenv()
         self.bot_token = self.dotenv.bot_token
-        self.admin_id = self.dotenv.admin_id
+        self.admin_id = self.dotenv.admin_ids
         
         self.logger = Logger()
 

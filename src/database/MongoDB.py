@@ -1,4 +1,5 @@
 from datetime import datetime
+from telebot.types import Message
 
 from pymongo import MongoClient
 from pymongo.collection import Collection
@@ -6,10 +7,11 @@ from pymongo.collection import Collection
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
 
-from src.users.students import STUDENT_LIST
+# from src.users.list.students import STUDENT_LIST
+# from src.users.list.admins import ADMIN_LIST
+from src.users.NewUser import NewGuest, NewAdmin, NewStudent
 
-#! Нужно провести оптимизацию, чтобы мы каждый раз не подключались к базе данных
-#! Или делали это как можно реже
+from src.users.initial.InitialUsers import InitialUsers
 
 
 class MongoDB:
@@ -32,6 +34,7 @@ class MongoDB:
     
     def __init__(self, user_id: int = None) -> None:
         self.logger = Logger()
+        self.dotenv = Dotenv()
         
         self.users_collection: Collection = self.database['users']
 
@@ -59,11 +62,51 @@ class MongoDB:
             self.logger.info(f"Новенький юзер с id {self.user_id}! Сохраняю в базу данных... 😋")
             return False
         
+
+    
+    # def save_student_to_db(self, student_id: int):
+    #     student_object = UserHelpers().find_student(user_id=student_id)
+    #     # self.logger.info(f"student: { student_object }")
         
-    def save_user_to_db(self, new_user) -> None:
-        self.users_collection.insert_one(new_user)
+    #     new_student = NewStudent(user_id=student_id, student_data=student_object).create_new_student()
+    #     self.users_collection.insert_one(new_student)
+        # self.logger.info(f"студент {student_object["real_name"]} сохранён в БД ✔")
+    
+    
+    # def save_admin_to_db(self, admin_id: int):
+    #     admin_object = UserHelpers().find_admin(user_id=admin_id)
+    #     # self.logger.info(f"admin: { admin_object }")
         
-        self.logger.info(f"Пользователь {new_user["first_name"]} с id {new_user["user_id"]} сохранён в Монго! 🎯")
+    #     new_admin = NewAdmin(user_id=admin_id, admin_data=admin_object).create_new_admin()
+    #     self.users_collection.insert_one(new_admin)
+        # self.logger.info(f"админ {admin_object["real_name"]} сохранён в БД ✔")
+        
+    
+        
+    def save_initial_user_to_db(self, user_data) -> None:
+        new_user = {}
+        
+        if user_data["access_level"] == "admin":
+            new_user = NewAdmin(user_id=user_data["user_id"], admin_data=user_data).create_new_admin()
+            
+        if user_data["access_level"] == "student":
+            new_user = NewStudent(user_id=user_data["user_id"], student_data=user_data).create_new_student()
+        
+        self.users_collection.insert_one(new_user)    
+        self.logger.info(f"{user_data["real_name"]} сохранён в БД ⏳ ")
+        
+        
+
+    def save_guest_to_db(self, message: Message):
+        new_user = NewGuest(message=message).create_new_student()
+        self.users_collection.insert_one(new_user)   
+        
+        # self.users_collection.insert_one(new_user)
+        
+        # user_real_name = new_user["real_name"] | new_user["first_name"] 
+        # user_id = new_user["user_id"]
+        
+        # self.logger.info(f"🎯 { user_real_name } с id { user_id } сохранён в БД ")
         
         
     def save_real_name(self, real_name: str):
@@ -104,6 +147,55 @@ class MongoDB:
     def save_users(self, users: list):
         self.users_collection.insert_many(users)
         self.logger.info(f"Пользователи сохранены в БД!")
+        
+        
+    def check_initial_users_in_db(self):
+        initial_users = InitialUsers().get_initial_users()
+        
+        for initial_user in initial_users:
+            # self.logger.info(f"student: {student}")
+            filter_by_id = { "user_id": initial_user["user_id"] }
+            is_user_exists_in_db = self.users_collection.find_one(filter=filter_by_id)
+            
+            if not is_user_exists_in_db:
+                self.logger.info(f"❌ user doesn't exist, here's id: { initial_user["user_id"] }")
+                
+                self.save_initial_user_to_db(user_data=initial_user)
+                
+                # self.save_user_to_db(new_user=initial_user)
+            else:
+                self.logger.info(f"✔ user exist: { initial_user["real_name"]}")
+        
+        
+    #? Admins
+    # def check_admins_in_db(self):
+    #     for admin_id in self.dotenv.student_ids:
+    #         # self.logger.info(f"student: {student}")
+    #         filter_by_id = { "user_id": admin_id }
+    #         is_student_exists = self.users_collection.find_one(filter=filter_by_id)
+            
+    #         if not is_student_exists:
+    #             self.logger.info(f"❌ admin doesn't exist, here's id: { admin_id}")
+    #             self.save_admin_to_db(admin_id=admin_id)
+    #         else:
+    #             self.logger.info(f"✔ admin exist, here's id: { admin_id}")
+        
+        
+    # #? Students
+    
+    # def check_students_in_db(self):
+    #     for student_id in self.dotenv.student_ids:
+    #         # self.logger.info(f"student: {student}")
+    #         filter_by_id = { "user_id": student_id }
+    #         is_student_exists = self.users_collection.find_one(filter=filter_by_id)
+            
+    #         if not is_student_exists:
+    #             self.logger.info(f"❌ student doesn't exist, here's id: { student_id}")
+    #             self.save_student_to_db(student_id=student_id)
+    #         else:
+    #             self.logger.info(f"✔ student exist, here's id: { student_id}")
+                
+        
         
         
     
@@ -149,37 +241,3 @@ class MongoDB:
 
 
 
-
-""" 
-    Actions to save in DB:
-    - registration 
-    - command used 
-    - leave chat (idle for 10s-15s) 
-    - filled in some data
-    - press a button
-    - choose a menu link / (or go to specific menu option)
-
-    Structure: 
-    [
-        "Дамир": [
-            {
-                "time": "18:09:23 28-12-2023",
-                "comment": "зашёл в бота", 
-                "action_type": "login", 
-                "command": "/start", 
-            },
-            {
-                "time": "18:10:01 28-12-2023",
-                "comment": "нажал /start", 
-                "action_type": "login", 
-                "command": "/start", 
-            },
-            {
-                "time": "18:11:20 28-12-2023",
-                "comment": "вышел из бота", 
-                "action_type": "logout", 
-                "command": "", 
-            },
-        ]
-    ]
-"""
