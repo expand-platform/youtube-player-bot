@@ -1,11 +1,32 @@
 from telebot.types import Message
 from datetime import datetime
 
-from src.utils.Dotenv import Dotenv
-
 from src.users.types import GuestT, AdminT, StudentT
 
 #? Думаю, здесь можно создать один класс, правда в нём будет много проверок...
+
+class NewInitialGuest:
+    """ base class for adding new users to DB """
+    def __init__(self, user_info):
+        self.user_id = user_info["user_id"]
+        self.first_name = user_info["first_name"]
+        self.username = user_info["username"]
+    
+
+    def create_new_guest(self):
+        new_guest: GuestT = {
+            "first_name":  self.first_name,
+            "username": self.username,
+            
+            "user_id": self.user_id,
+            "chat_id": self.user_id,
+
+            "access_level": "guest",
+
+            "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
+        }
+        return new_guest
+    
 
 class NewGuest:
     """ base class for adding new users to DB """
@@ -52,6 +73,7 @@ class NewAdmin():
         }
         return new_admin
 
+
 class NewStudent():
     def __init__(self, user_id: int, student_data: object):
         self.user_id = user_id
@@ -62,7 +84,6 @@ class NewStudent():
         self.payment_amount = student_data["payment_amount"]
         self.max_lessons = student_data["max_lessons"]
 
-            
         
     def create_new_student(self):
         new_student: StudentT = {
@@ -86,5 +107,25 @@ class NewStudent():
             "stats": {},
         }
         return new_student
+    
         
-
+class NewUser():
+    """ combines all types of users """
+    
+    def __init__(self):
+        pass
+    
+    
+    def create_new_user(self, user_info):
+        new_user = {}
+        
+        if user_info["access_level"] == "admin":
+            new_user = NewAdmin(user_id=user_info["user_id"], admin_data=user_info).create_new_admin()
+            
+        if user_info["access_level"] == "student":
+            new_user = NewStudent(user_id=user_info["user_id"], student_data=user_info).create_new_student()
+            
+        if user_info["access_level"] == "guest":
+            new_user = NewInitialGuest(user_info=user_info).create_new_guest()
+        
+        return new_user

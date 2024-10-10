@@ -7,30 +7,23 @@ from src.utils.Logger import Logger
 from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS
 
 from src.bot.Bot import Bot
-from src.users.Users import Users
+from database.Cache import Cache
+from src.users.NewUser import NewGuest
 from src.database.MongoDB import MongoDB
 
 from src.languages.Language import Language
 
-
-#? General approach is next: 
-#? 1) Generate /slash-command
-#? 2) generate next_handler of some type (if needed)  
-#? 3) generate next_handler(s) (if needed) (multiple handlers)  
 
 
 class StepGenerator:
     def __init__(self, bot: Bot):
         self.logger = Logger()
         
-        #* get launched bot instance as a parameter
         self.environment = Dotenv().environment
         self.bot = bot.bot_instance
         
-        #* helpers
         self.send_multiple_messages = bot.send_multiple_messages
         self.send_message_with_variable = bot.send_message_with_variable
-        
         self.tell_admin = bot.tell_admin
     
 
@@ -53,15 +46,25 @@ class StepGenerator:
                 mongodb_method_name: str = None,
                 mongodb_activation_position: str = None,  # "before_messages", "after_messages"
                 
-                
-                custom_function_name: str = None,
-                custom_command_position: int = 1,
                 ):
 
         
         @self.bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
-            user = Users(message=message)
+            active_user = Cache().get_user(message.from_user.id)
+            
+            #? Чтобы избежать таких постоянных проверок, можно 
+            #? сделать класс Mongo - супер классом
+            #? В ней будет раздел кешированых юзеров и возможность ими манипулировать
+            
+            #? Вот эту логику перенести в базу данных
+            if not active_user:
+                active_user = NewGuest(message).create_new_guest()
+                MongoDB().save_user_to_db(active_user)
+                Cache().cache_user(active_user)
+            
+            
+            # user = Users(message=message)
             user = user.get_active_user()
             self.logger.info(f"Текущий пользователь (/start): { user }")
             
@@ -203,8 +206,8 @@ class StepGenerator:
                 self.logger.info(f"lessons_left: { lessons_left }")
                 self.logger.info(f"done_lessons: { done_lessons }")
                 
-                MongoDB(message.from_user.id).update_user_data(key="lessons_left", new_value=lessons_left)
-                MongoDB(message.from_user.id).update_user_data(key="done_lessons", new_value=done_lessons)
+                MongoDB(message.from_user.id).update_user_in_db(key="lessons_left", new_value=lessons_left)
+                MongoDB(message.from_user.id).update_user_in_db(key="done_lessons", new_value=done_lessons)
                 
                 self.logger.info(f"mongoDB updated with new lessons! ✅")
                 
@@ -223,8 +226,8 @@ class StepGenerator:
                 
                 [lessons_left, done_lessons] = Users(message).get_lessons_left_from_cache()
                 
-                MongoDB(message.from_user.id).update_user_data(key="lessons_left", new_value=lessons_left)
-                MongoDB(message.from_user.id).update_user_data(key="done_lessons", new_value=done_lessons)
+                MongoDB(message.from_user.id).update_user_in_db(key="lessons_left", new_value=lessons_left)
+                MongoDB(message.from_user.id).update_user_in_db(key="done_lessons", new_value=done_lessons)
                 
                 Users(message)
 

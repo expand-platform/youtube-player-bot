@@ -8,8 +8,6 @@ class Dotenv():
         
         self.bot_token = ''
         
-        # self.admin_ids = []
-        # self.student_ids = ''
         self.user_ids = []
         
         self.environment = ''
@@ -21,8 +19,6 @@ class Dotenv():
     def collect_env_data(self):
         self.bot_token: str = os.getenv('BOT_TOKEN')
         
-        # self.admin_ids: list[int] = self.convert_to_list(os.getenv('ADMIN_IDS'))
-        # self.student_ids: list[int] = self.convert_to_list(os.getenv('STUDENT_IDS'))
         self.user_ids: list[int] = self.convert_to_list(os.getenv('USER_IDS'))
         
         self.environment: str = os.getenv('ENVIRONMENT')

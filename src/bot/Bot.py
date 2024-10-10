@@ -2,10 +2,15 @@ from telebot import TeleBot
 from telebot.states.sync.middleware import StateMiddleware
 from telebot.custom_filters import StateFilter, IsDigitFilter, TextMatchFilter
 
+from src.bot.Filters import AccessLevelFilter
+
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
+# from src.users.initial.Cache import CachedUsers
 
-from src.bot.Filters import AccessLevelFilter
+from src.database.Database import Database
+# from src.database.users.CachedUsers import CachedUsers
+
 
 
 
@@ -24,8 +29,6 @@ class Bot:
     def __init__(self):
         self.dotenv = Dotenv()
         self.bot_token = self.dotenv.bot_token
-        self.admin_id = self.dotenv.admin_ids
-        
         self.logger = Logger()
 
         self.bot_instance = None
@@ -38,6 +41,7 @@ class Bot:
         self.bot_instance = TeleBot(token=self.bot_token, use_class_middlewares=True)
         
         bot_name = self.get_bot_data(bot=self.bot_instance, requested_data="first_name")
+        
         if self.bot_instance:
             self.logger.info(f"Подключаюсь к боту '{bot_name}'...")
             self.tell_admin("Начинаю работу...")
@@ -92,7 +96,12 @@ class Bot:
         self.logger.info('бот выключен ❌')
         
     def tell_admin(self, message):
-        self.bot_instance.send_message(chat_id=self.admin_id, text=message)
+        # admin_ids = CachedUsers().get_admin_ids()
+        admin_ids = Database().get_admin_ids()
+        
+        for admin_id in admin_ids:
+            # self.logger.info(f"admin_id: {admin_id}")
+            self.bot_instance.send_message(chat_id=admin_id, text=message)
         
         
     def send_multiple_messages(self, chat_id, messages: list, disable_preview=False, parse_mode="Markdown"):

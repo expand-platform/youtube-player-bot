@@ -1,20 +1,8 @@
-# from telebot import TeleBot
-from telebot.states.sync.context import StateContext
-# from telebot.types import Message
-
-# from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS, ADMIN_SLASH_COMMANDS
-
-# from src.messages.InlineKeyboard import InlineKeyboard
-# from src.database.MongoDB import MongoDB
 from src.utils.Logger import Logger
-# from src.bot.States import UserStates
 from src.languages.Language import Language
-# from src.users.Users import NewUser
 
 from src.bot.Bot import Bot
 from src.automation.StepGenerator import StepGenerator
-
-# from src.users.Users import Users
 
 
 class BotMessages:
@@ -31,7 +19,7 @@ class BotMessages:
         
         # self.users = Users()
         
-        self.enable_slash_commands()
+        # self.enable_slash_commands()
    
         
     def enable_slash_commands(self):

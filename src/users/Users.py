@@ -197,7 +197,7 @@ class NewUser:
         is_user_exits = mongoDB.check_if_user_exists()
         
         if not is_user_exits:
-            MongoDB().save_initial_user_to_db(self.new_user)
+            MongoDB().save_user_to_db(self.new_user)
 
 
     def set_access_level(self):
