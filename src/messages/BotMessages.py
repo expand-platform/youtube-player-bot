@@ -7,24 +7,18 @@ from src.automation.StepGenerator import StepGenerator
 
 class BotMessages:
     def __init__(self, bot: Bot):
-        self.bot: Bot = bot.bot_instance
-        self.chat_id = None
+        self.logger = Logger()
         
-        # helpers
+        self.bot: Bot = bot.bot_instance
         self.tell_admin = bot.tell_admin
         
         self.step_generator = StepGenerator(bot)
-        self.logger = Logger()
         self.messages = Language().messages
         
-        # self.users = Users()
-        
-        # self.enable_slash_commands()
+        self.enable_slash_commands()
    
         
     def enable_slash_commands(self):
-        """ clears and sets slash commands """
-        
         #* Guests
         #? /start
         self.step_generator.set_command(
@@ -36,7 +30,6 @@ class BotMessages:
             format_message=self.messages["guest_welcome"],
             format_variable="user.first_name",
         )
-        
         
         
         #* Students 
@@ -69,12 +62,12 @@ class BotMessages:
             message_text=self.messages["zoom"]
         )
        
-        #? /map
+        #? /plan
         self.step_generator.set_command(
-            command_name="map",
+            command_name="plan",
             access_level=["student", "admin"], 
             
-            message_text=self.messages["map"]
+            message_text=self.messages["plan"]
         )
         
         #? /payment 

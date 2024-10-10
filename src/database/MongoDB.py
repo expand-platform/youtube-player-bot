@@ -1,16 +1,14 @@
 from datetime import datetime
-from telebot.types import Message
 
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
+from src.users.InitialUsers import InitialUsers
 
-from src.users.NewUser import NewGuest, NewAdmin, NewStudent, NewUser
 
-# from src.database.users.InitialUsers import InitialUsers
-
+#! Когда-нибудь руки дойдут до хеширования данных (как минимум: user_id, real_name)
 
 
 class MongoDB:
@@ -28,7 +26,6 @@ class MongoDB:
             Logger().info(f"База данных {DATABASE_NAME} подключена!")
         
         return cls._mongoDB_instance
-
 
     
     def __init__(self) -> None:
@@ -59,93 +56,26 @@ class MongoDB:
             return False
         
         
-    def save_user_to_db(self, new_user) -> None:
+    def save_user(self, new_user: dict) -> None:
         self.users_collection.insert_one(new_user)
+        self.logger.info(f"before: { new_user }  ⏳ ")
         
-        user_name = new_user["real_name"] or new_user["first_name"] 
-        self.logger.info(f"{ user_name } сохранён в БД ⏳ ")
+        self.logger.info(f"Юзер с id { new_user["user_id"] } сохранён в БД ⏳ ")
         
 
         
-    def update_user_in_db(self, user_id: int, key: str, new_value: str | int | bool):
+    def update_user(self, user_id: int, key: str, new_value: str | int | bool):
         filter_by_id = { 'user_id' : user_id }
         update_operation = { '$set': { key : new_value } }
         
         self.users_collection.update_one(filter=filter_by_id, update=update_operation)
         
         
-    
-    # def get_real_name(self, id) -> str:
-    #     filter_by_id = {'user_id' : self.user_id}
-    #     user = self.users_collection.find_one(filter=filter_by_id)
-        
-    #     return user["real_name"]
-    
-    # def get_user_info(self):
-    #     pass
-    
-    
-    def get_payment_data(self) -> int:
-        filter_by_id = {'user_id' : self.user_id}
-        user = self.users_collection.find_one(filter=filter_by_id)
-        
-        self.logger.info(f"payment amount: {user["payment_amount"]}")
-        
-        return user["payment_amount"]
-        
-        
     def clean_users(self):
-        self.users_collection.delete_many({})
+        admin_ids = InitialUsers().admin_ids
+        delete_filter = {"user_id": {"$nin": admin_ids}}
+        
+        self.users_collection.delete_many(filter=delete_filter)
         self.logger.info(f"Коллекция пользователей MongoDB очищена! 🧹")
         
-
-    def save_users(self, users: list):
-        self.users_collection.insert_many(users)
-        self.logger.info(f"Пользователи сохранены в БД!")
-        
-   
-        
-    
-    def save_students(self):
-        self.logger.info("Записываю студентов в базу данных... 👩‍🎓")
-        
-        all_students = []
-        
-        for student in STUDENT_LIST:
-            new_student = {
-                "real_name": student["real_name"],
-                "last_name": student["last_name"],
-                
-                "user_id": student["user_id"],
-                "chat_id": student["user_id"],
-                
-                "access_level": "student",
-                
-                "first_name": "",
-                "username": "",
-                
-                "language": "ru", 
-                
-                "payment_amount": student["payment_amount"],
-                "payment_status": False,
-                
-                "max_lessons": student["max_lessons"],
-                "done_lessons": 0,
-                "lessons_left": student["max_lessons"],
-
-                "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
-                
-                "stats": {}, 
-            }
-            
-            all_students.append(new_student)
-        
-        self.logger.info(f"all students: {all_students}")
-            
-        
-        # сохраняем студентов балком
-        self.save_users(all_students)
-     
-
-
 

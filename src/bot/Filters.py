@@ -1,8 +1,8 @@
-from telebot import TeleBot, custom_filters
+from logging import log
 from telebot.custom_filters import AdvancedCustomFilter
-from src.users.Users import Users
 
 from src.utils.Logger import Logger
+from src.database.Database import Database
 
 
 class AccessLevelFilter(AdvancedCustomFilter):
@@ -14,12 +14,14 @@ class AccessLevelFilter(AdvancedCustomFilter):
         
 
     def check(self, message, access_level):
-        user = Users(message=message)
-        self.logger.info(f"Текущий пользователь (Filter.py): { user }")
-        self.logger.info(f"Текущий пользователь (Filter.py): { user.active_user }")
+        # self.logger.info(f"Filters (check)")
+        active_user = Database().set_active_user(message)
+        
+        # user_name = Database().get_real_name(active_user)
+        # self.logger.info(f"Бот использует (Filter.py): { user_name }")
 
         # if a list...
         if isinstance(access_level, list):
-            return user.active_user["access_level"] in access_level
+            return active_user["access_level"] in access_level
        
 

@@ -6,10 +6,9 @@ from src.bot.Filters import AccessLevelFilter
 
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
-# from src.users.initial.Cache import CachedUsers
 
+from src.database.Cache import Cache
 from src.database.Database import Database
-# from src.database.users.CachedUsers import CachedUsers
 
 
 
@@ -19,7 +18,6 @@ class Bot:
 
     _bot_instance = None
     
-    # singleton pattern  
     def __new__(cls, *args, **kwargs):
         if cls._bot_instance is None:
             cls._bot_instance = super(Bot, cls).__new__(cls)
@@ -95,9 +93,11 @@ class Bot:
         self.bot_instance.stop_bot()
         self.logger.info('бот выключен ❌')
         
-    def tell_admin(self, message):
-        # admin_ids = CachedUsers().get_admin_ids()
-        admin_ids = Database().get_admin_ids()
+        
+    def tell_admin(self, message: str) -> None:
+        admin_ids = Cache().admin_ids
+        # self.logger.info(f"admin_ids (tell_admin): { admin_ids }")
+        
         
         for admin_id in admin_ids:
             # self.logger.info(f"admin_id: {admin_id}")

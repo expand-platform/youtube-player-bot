@@ -13,7 +13,7 @@ STUDENT_SLASH_COMMANDS = [
     BotCommand("schedule", commands["schedule"]),
 
     BotCommand("zoom", commands["zoom"]),
-    BotCommand("map", commands["map"]),
+    BotCommand("plan", commands["plan"]),
  
     BotCommand("lessons", commands["lessons"]),
     BotCommand("payment", commands["payment"]),
@@ -21,16 +21,6 @@ STUDENT_SLASH_COMMANDS = [
     BotCommand("done", commands["done"]),
 ]
 
-
-# ADMIN_SLASH_COMMANDS = [
-#     BotCommand("start", commands["start"]),
-#     BotCommand("zoom", commands["zoom"]), # sends link
- 
-    # BotCommand("schedule", commands["schedule"]), # add options for changing data in db
-    # BotCommand("payment", commands["payment"]), # shows total amount, sum left and payee left
-    # BotCommand("lessons", commands["lessons"]), # shows lessons left for each student
- 
-    # BotCommand("clean", commands["clean"]),
-    # BotCommand("fill", commands["fill"]),
-# ]
-
+# Admin commands:
+# /clean
+# /fill

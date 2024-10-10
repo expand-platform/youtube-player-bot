@@ -4,20 +4,25 @@ from src.users.users_list import INITIAL_USERS
 
 
 class InitialUsers:
+    _users_instance = None
+    
+    def __new__(cls, *args, **kwargs):
+        if cls._users_instance is None:
+            cls._users_instance = super(InitialUsers, cls).__new__(cls)
+            cls._users_instance.initial_users = INITIAL_USERS
+            cls._users_instance.admin_ids = []
+            
+        return cls._users_instance
+    
+    
     def __init__(self):
         self.logger = Logger()
-        
-        self.user_ids: list = Dotenv().user_ids
-        self.initial_users: list = INITIAL_USERS
-        
-        self.admin_ids = []
-        
         self.initial_admins = 1
-        
-        self.pin_ids_to_users()
     
     
     def pin_ids_to_users(self) -> None:
+        self.user_ids: list = Dotenv().user_ids
+        
         for user_id, user in zip(self.user_ids, self.initial_users):
             user["user_id"] = user_id
             user["chat_id"] = user_id
@@ -30,7 +35,7 @@ class InitialUsers:
             for admin in self.initial_users[0:self.initial_admins]:
                 self.admin_ids.append(admin["user_id"])
                 
-                self.logger.info(f"admin in cache: {admin}")
+                # self.logger.info(f"admin in cache: {admin}")
                 self.logger.info(f"admin ids: {self.admin_ids}")
             return self.admin_ids
         else: 
@@ -44,5 +49,5 @@ class InitialUsers:
             
             
     def get_initial_users(self) -> list:
-        self.logger.info(f"self.initial_users: { self.initial_users }")
+        # self.logger.info(f"self.initial_users: { self.initial_users }")
         return self.initial_users

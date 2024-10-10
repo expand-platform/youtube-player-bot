@@ -1,6 +1,8 @@
 from typing import TypedDict
 
 class UserT(TypedDict):
+    real_name: str
+    
     first_name: str 
     username: str
     
@@ -8,29 +10,8 @@ class UserT(TypedDict):
     chat_id: int
 
     access_level: str
-    language: str
 
     joined_at: str
-    
-
-class GuestT(UserT):
-    pass
-
-    
-class AdminT(UserT):
-    real_name: str
-    last_name: str
-    
-    language: str
-    
-    joined_at: str
-
-
-class StudentT(UserT):
-    real_name: str
-    last_name: str
-    
-    language: str
     
     payment_amount: int
     payment_status: bool

@@ -8,7 +8,7 @@ BOT_COMMANDS_RU = {
     
     "schedule": "Когда мой урок?",
     "zoom": "Ссылка на Zoom",
-    "map": "План-карта",
+    "plan": "План-карта",
     
     "payment": "Реквизиты и оплата",
     "lessons": "Остаток уроков",
@@ -38,7 +38,7 @@ BOT_MESSAGES_RU = {
 """
 /schedule Когда следующий урок?
 /zoom  Ссылка для Zoom
-/map  План-карта
+/plan  План-карта
 
 /payment Реквизиты и оплата
 /lessons Остаток уроков
@@ -83,19 +83,23 @@ BOT_MESSAGES_RU = {
 Нажми /zoom"""
 ],
 
-"map": [
+"plan": [
 """
-Первый уровень: фронтенд
-План-карта по *JavaScript*  
+1) План-карта *JavaScript*  
 https://www.expandplatform.com/web/  
 
-Второй уровень: GUI и бекенд
-План-карта по *Python*  
+
+2) План-карта *Python*  
 https://www.expandplatform.com/python/  
 
-Третий уровень: фулл-стек
-Разработка *сервисов*  
+
+3) Разработка *сервисов*  
 https://www.expandplatform.com/services/
+
+
+Карта всех проектов
+https://www.expandplatform.com/students/projects/
+
 """,  
 ],
     

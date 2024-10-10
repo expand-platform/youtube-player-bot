@@ -1,5 +1,6 @@
 from src.utils.Logger import Logger
 from src.users.InitialUsers import InitialUsers
+from src.users.NewUser import NewUser
 
 
 class Cache:
@@ -22,7 +23,7 @@ class Cache:
         self.cached_users.append(new_user)
         
         
-    def get_cached_users(self) -> list:
+    def get_users_from_cache(self) -> list:
         if len(self.cached_users) > 0:
             self.logger.info(f"🟢 users in cache: { self.cached_users }")
             return self.cached_users
@@ -32,23 +33,26 @@ class Cache:
     
     
     def get_admin_ids(self) -> list:
-        self.logger.info(f"admin ids: { self.admin_ids }")
+        # self.logger.info(f"admin ids: { self.admin_ids }")
         return self.admin_ids
     
     
-    def find_user(self, user_id):
+    def find_active_user(self, user_id):
+        # self.logger.info(f"user_id (Cache.find_active_user): { user_id }")
         for user in self.cached_users:
+            # self.logger.info(f"user: { user }")
             if user["user_id"] == user_id:
                 return user
-            else:
-                return None
+        # if user not found
+        return None
+    
 
     def update_user(self, user_id: int, key: str, new_value: str | int | bool):
         for user in self.cached_users:
             if user["user_id"] == user_id:
                 user[key] = new_value
                 
-                user_name = user["real_name"] or user["first_name"]
+                user_name = user.get("real_name", user["first_name"])
                 self.logger.info(f"user { user_name } updated!")
                 
 
@@ -56,3 +60,7 @@ class Cache:
         self.cached_users = []
         self.logger.info(f"Кеш пользователей очищен! 🧹")
         
+        initial_users = InitialUsers().get_initial_users()
+        admin = NewUser().create_new_user(user_info=initial_users[0])
+        
+        self.cache_user(admin)

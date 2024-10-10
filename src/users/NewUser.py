@@ -1,7 +1,7 @@
 from telebot.types import Message
 from datetime import datetime
 
-from src.users.types import GuestT, AdminT, StudentT
+from src.users.types import UserT
 
 #? Думаю, здесь можно создать один класс, правда в нём будет много проверок...
 
@@ -14,7 +14,7 @@ class NewInitialGuest:
     
 
     def create_new_guest(self):
-        new_guest: GuestT = {
+        new_guest: UserT = {
             "first_name":  self.first_name,
             "username": self.username,
             
@@ -36,7 +36,7 @@ class NewGuest:
     
 
     def create_new_guest(self):
-        new_guest: GuestT = {
+        new_guest: UserT = {
             "first_name":  self.message.chat.first_name.encode().decode('utf-8'),
             "username": self.message.chat.username,
             
@@ -60,7 +60,7 @@ class NewAdmin():
         
         
     def create_new_admin(self):
-        new_admin: AdminT = {
+        new_admin: UserT = {
             "real_name": self.real_name,
             "username": self.user_name,
             
@@ -86,7 +86,7 @@ class NewStudent():
 
         
     def create_new_student(self):
-        new_student: StudentT = {
+        new_student: UserT = {
             "real_name": self.real_name,
             "last_name": self.last_name,
             
