@@ -46,6 +46,8 @@ BOT_MESSAGES_RU = {
 /lessons Остаток уроков
 
 /done Заполнить отчёт
+
+/version Что нового в боте?
 """
 ],
     
