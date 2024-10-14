@@ -15,7 +15,7 @@ class AccessLevelFilter(AdvancedCustomFilter):
 
     def check(self, message, access_level):
         # self.logger.info(f"Filters (check)")
-        active_user = Database().set_active_user(message)
+        active_user = Database().detect_active_user(message)
         
         # user_name = Database().get_real_name(active_user)
         # self.logger.info(f"Бот использует (Filter.py): { user_name }")

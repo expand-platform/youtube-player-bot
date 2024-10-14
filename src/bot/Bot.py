@@ -96,11 +96,8 @@ class Bot:
         
     def tell_admin(self, message: str) -> None:
         admin_ids = Cache().admin_ids
-        # self.logger.info(f"admin_ids (tell_admin): { admin_ids }")
-        
         
         for admin_id in admin_ids:
-            # self.logger.info(f"admin_id: {admin_id}")
             self.bot_instance.send_message(chat_id=admin_id, text=message)
         
         

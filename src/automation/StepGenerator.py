@@ -1,6 +1,9 @@
 from typing import Any
+from telebot import TeleBot
 from telebot.types import Message
+from telebot.states.sync.context import State, StateContext
 
+from src.database.MongoDB import MongoDB
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
@@ -23,7 +26,7 @@ class StepGenerator:
         
         self.send_multiple_messages = bot.send_multiple_messages
         self.send_message_with_variable = bot.send_message_with_variable
-        self.tell_admin = bot.tell_admin
+        self.notify_admins = bot.tell_admin
     
 
     #* generate any /slash commands 
@@ -33,69 +36,165 @@ class StepGenerator:
                 
                 set_slash_command: bool = False,
                 
-                message_text: str = None,
-                multiple_messages: list = None,
+                bot_before_message: str = None,
+                bot_after_message: str = None,
                 
-                format_message: str = None, 
-                format_variable: str = None,
+                bot_after_multiple_messages: list = None,
+                bot_before_multiple_messages: list = None,
                 
-                messages_for_formatting: list = None,
-                variables_for_formatting: list = None,
+                formatted_messages: str = None, 
+                formatted_variables: str = None,
                 
                 mongodb_method_name: str = None,
                 mongodb_activation_position: str = None,  # "before_messages", "after_messages"
-                
                 ):
 
         
         @self.bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
-            self.logger.info(f"(/{command_name}) работает ")
-            active_user = Database().set_active_user(message)
-            # user_name = Database().get_real_name(active_user, message)
-
-            # self.logger.info(f"Бот использует (/{command_name}): { user_name }")
-            
+            # self.logger.info(f"(/{command_name}) сработала! ")
+            active_user = Database().detect_active_user(message)
             
             if set_slash_command:
                 self.set_slash_commands(active_user)
             
-            if format_message:
-                self.send_formatted_message(message_to_format=format_message, formatting_variable=format_variable, user=active_user)
+            #? MongoDB (before messages)
+            if mongodb_activation_position == "before_messages" and mongodb_method_name:
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
                 
-            # multiple formatting messages
-            if messages_for_formatting and variables_for_formatting:
-                self.send_multiple_formatted_messages(messages=messages_for_formatting, formatting_variables=variables_for_formatting, user=active_user)
+            #? Messages (before)
+            if bot_before_message:
+                self.bot.send_message(chat_id=active_user["user_id"], text=bot_before_message, parse_mode="Markdown")
+                             
+            if bot_before_multiple_messages:
+                self.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_before_multiple_messages)
                 
+            #? Formatted messages
+            if formatted_messages and formatted_variables:
+                self.format_message(messages=formatted_messages, formatting_variables=formatted_variables, user=active_user)
                 
-            if multiple_messages:
-                self.send_multiple_messages(chat_id=active_user["user_id"], messages=multiple_messages)
+            #? After messages
+            if bot_after_message:
+                self.bot.send_message(chat_id=active_user["user_id"], text=bot_after_message, parse_mode="Markdown")
                 
-            if message_text:
-                self.bot.send_message(chat_id=active_user["user_id"], text=message_text, parse_mode="Markdown")
+            if bot_after_multiple_messages:
+                self.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_after_multiple_messages)
                 
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
-                self.choose_database_method(method_name=mongodb_method_name, message=message)
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
             
             self.notify_admin(active_user=active_user, command_name=command_name)
     
     
     
     #? ADMIN COMMANDS 
-    def set_admin_command(self, 
+    def simple_admin_command(self, 
                         command_name: str = None,
-                        message_suffix: str = "_success", 
-                        # нужно называть сообщения в стиле "fill_success, clean_success" 
-                        # для полной автоматизации
+                        
+                        bot_extra_message: str = None,
+
+                        mongodb_method_name: str = None,
+                        mongodb_activation_position: str = "after_messages",  # "before_messages", 
                         ):
         @self.bot.message_handler(commands=[command_name], access_level=["admin"])
         def set_admin_command(message: Message):
-            self.choose_database_method(method_name=command_name, message=message)
             
+            active_user = Database().detect_active_user(message)
             messages = Language().messages
-            self.tell_admin(message=messages[command_name + message_suffix])
+            
+            if mongodb_activation_position == "before_messages" and mongodb_method_name:
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+
+            if bot_extra_message:
+                self.bot.send_message(chat_id=active_user["user_id"], text=bot_extra_message, parse_mode="Markdown")
+            
+            if mongodb_activation_position == "after_messages" and mongodb_method_name:
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+            
+            # self.notify_admins(message=messages[command_name + bot_message_suffix])
             
             
+    #? ADMIN COMMANDS 
+    def admin_command_with_state(self, 
+                        handler_type: str = "state",
+                        command_name: str = None,
+                        
+                        active_state: StateContext = None,
+                        next_state: StateContext = None,
+                        
+                        state_variable: str = None,
+
+                        use_state_data: bool = False,
+                        requested_state_data: str = None,
+                        
+                        bot_message: str = None,
+                        
+                        formatted_messages: list = None, 
+                        formatted_variables: list = None,
+                        
+                        mongodb_activation_position: str = "after_messages",
+                        mongodb_method_name: str = None,
+                        
+                        bot_reply: str = None,
+                        
+                        ):
+        
+        
+        def set_admin_command(message: Message, state: StateContext):
+                #? initial data
+                active_user = Database().detect_active_user(message)
+                messages = Language().messages
+                
+                
+                #? Save state's data or remove it
+                state_data = {}
+
+                if next_state:
+                    state.set(state=next_state)
+                
+                if active_state:
+                    self.logger.info(f"user's reply: { message.text }")
+                    
+                    self.save_data_in_state(variable_name=state_variable, data_to_save=message.text, state=state)
+                
+                if use_state_data and requested_state_data:
+                    state_data = self.get_state_data(requested_data=requested_state_data, state=state)
+                    print("🐍 state_data: ", state_data)
+                    
+                if not next_state:
+                    state.delete()
+
+
+                #? DB action (before messages)                
+                if mongodb_activation_position == "before_messages" and mongodb_method_name:
+                    self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, data_from_state=state_data)
+                    
+                    
+                #? Messages
+                if bot_message:
+                    self.bot.send_message(chat_id=active_user["user_id"], text=bot_message, parse_mode="Markdown")
+                    
+                    
+                if formatted_messages and formatted_variables:
+                    self.format_message(messages=formatted_messages, formatting_variables=formatted_variables, user=active_user)
+                
+
+                #? MongoDB (end)
+                if mongodb_activation_position == "after_messages" and mongodb_method_name:
+                    self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, data_from_state=state_data)
+                
+                
+                if bot_reply:
+                    self.bot.send_message(chat_id=active_user["user_id"], text=bot_reply, parse_mode="Markdown")
+        
+        
+        if handler_type == "command":
+            self.bot.register_message_handler(set_admin_command, commands=[command_name], access_level=["admin"])
+            
+        if handler_type == "state":
+            self.bot.register_message_handler(set_admin_command, state=active_state, access_level=["admin"])
+            
+
     
     #* HELPERS
     def notify_admin(self, active_user: dict, command_name):
@@ -108,7 +207,7 @@ class StepGenerator:
         last_name = active_user.get("last_name", "")
         username = active_user["username"]
         
-        self.tell_admin(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
+        self.notify_admins(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
         self.logger.info(f"{ real_name } зашёл в раздел /{command_name} ✅")
     
     
@@ -153,7 +252,7 @@ class StepGenerator:
         self.send_message_with_variable(chat_id=user["user_id"], message=message_to_format, format_variable=data_for_formatting)
 
 
-    def send_multiple_formatted_messages(self, messages, formatting_variables, user):
+    def format_message(self, messages, formatting_variables, user):
         formatting_data = []
         
         for variable in formatting_variables:
@@ -170,21 +269,65 @@ class StepGenerator:
         self.logger.info(f"send_multiple_formatted_messages done 🥙")
         
     
-    def choose_database_method(self, method_name: str, message: Message):
-        match method_name:
+    def choose_database_method(self, mongodb_method_name: str, message: Message, data_from_state=None):
+        match mongodb_method_name:
             case "clean":
                 Database().clean_users()
             
             case "fill":
-                # Database().fill_database_from_scratch()
                 Database().sync_cache_and_remote_users()
                 
             case "update_lessons":
                 self.logger.info(f"updating_lessons...")
                 Database().update_lessons(message)
                 
+            case "update_version":
+                MongoDB().send_new_version_update(version_number=data_from_state["version_number"], changelog=data_from_state["version_changelog"])
+            
+            case "get_latest_versions_info":
+                latest_versions = MongoDB().get_latest_versions_info(versions_limit=3)
+                prepared_version_messages = self.prepare_version_messages(mongoDB_objects=latest_versions)
+                print("🐍 prepared_version_messages: ", prepared_version_messages)
                 
+                self.send_multiple_messages(chat_id=message.chat.id, messages=prepared_version_messages)
 
+                    
+    def save_data_in_state(self, 
+                                variable_name: str, 
+                                data_to_save = None, 
+                                state: StateContext = None, 
+                            ):
+        match variable_name:
+            case "version_number":
+                state.add_data(version_number=data_to_save)
+            
+            case "version_changelog":
+                state.add_data(version_changelog=data_to_save)
+                
+        
+    def get_state_data(self, requested_data: str = None, state: StateContext = None):
+        match requested_data:
+            case "new_version":
+                with state.data() as data:
+                    version_number = data.get("version_number")
+                    version_changelog = data.get("version_changelog")
+                    
+                    return {
+                        "version_number": version_number,
+                        "version_changelog": version_changelog,
+                    }
+
+    def prepare_version_messages(self, mongoDB_objects: list[dict]) -> list[dict]:
+        prepared_version_messages = [] 
+        
+        for object in mongoDB_objects:
+            new_message = f"*v{ object["version"] }* ({ object["date"] })\n\n { object["changelog"] } "
+            
+            print("🐍 new formatted object: ", new_message)
+            
+            prepared_version_messages.append(new_message)
+        
+        return prepared_version_messages
 
     
     #* MESSAGE TYPES

@@ -1,6 +1,8 @@
 from src.utils.Logger import Logger
 from src.languages.Language import Language
 
+from src.bot.States import UpdateVersionStates
+
 from src.bot.Bot import Bot
 from src.automation.StepGenerator import StepGenerator
 
@@ -27,8 +29,8 @@ class BotMessages:
             
             set_slash_command=True,
             
-            format_message=self.messages["guest_welcome"],
-            format_variable="user.first_name",
+            formatted_messages=[self.messages["guest_welcome"]],
+            formatted_variables=["user.first_name"],
         )
         
         
@@ -40,10 +42,10 @@ class BotMessages:
             
             set_slash_command=True,
             
-            format_message=self.messages["welcome_greeting"],
-            format_variable="user.real_name",
-            
-            message_text=self.messages["start"],
+            bot_after_message=self.messages["start"],
+
+            formatted_messages=[self.messages["welcome_greeting"]],
+            formatted_variables=["user.real_name"],
         )
         
         #? /schedule 
@@ -51,7 +53,7 @@ class BotMessages:
             command_name="schedule",
             access_level=["student", "admin"], 
             
-            multiple_messages=self.messages["schedule"],
+            bot_before_multiple_messages=self.messages["schedule"],
         )
         
         #? /zoom
@@ -59,7 +61,7 @@ class BotMessages:
             command_name="zoom",
             access_level=["student", "admin"], 
             
-            message_text=self.messages["zoom"]
+            bot_after_message=self.messages["zoom"]
         )
        
         #? /plan
@@ -67,7 +69,7 @@ class BotMessages:
             command_name="plan",
             access_level=["student", "admin"], 
             
-            message_text=self.messages["plan"]
+            bot_after_message=self.messages["plan"]
         )
         
         #? /payment 
@@ -75,10 +77,10 @@ class BotMessages:
             command_name="payment",
             access_level=["student"], 
             
-            format_message=self.messages["payment_amount"],
-            format_variable="user.payment_amount",
-            
-            multiple_messages=self.messages["payment_details"]
+            formatted_messages=[self.messages["payment_amount"]],
+            formatted_variables=["user.payment_amount"],
+
+            bot_after_multiple_messages=self.messages["payment_details"]
         )
         
         #? /lessons
@@ -86,8 +88,8 @@ class BotMessages:
             command_name="lessons",
             access_level=["student"], 
             
-            messages_for_formatting=[self.messages["lessons_left"]],
-            variables_for_formatting=["user.lessons_left"],
+            formatted_messages=[self.messages["lessons_left"]],
+            formatted_variables=["user.lessons_left"],
         )
         
         #? /done
@@ -95,23 +97,77 @@ class BotMessages:
             command_name="done",
             access_level=["student"], 
             
-            messages_for_formatting=[self.messages["done"], self.messages["lessons_left"]],
-            variables_for_formatting=["user.real_name", "user.done"],
+            formatted_messages=[self.messages["done"], self.messages["lessons_left"]],
+            formatted_variables=["user.real_name", "user.done"],
             
             mongodb_method_name="update_lessons",
             mongodb_activation_position="after_messages",
         )
         
+        #? /version
+        self.step_generator.set_command(
+            command_name="version",
+            access_level=["student", "admin"], 
+            
+            bot_after_message=self.messages["version_intro"],
+            
+            mongodb_activation_position="after_messages",
+            mongodb_method_name="get_latest_versions_info",
+        )
+        
     
         #* Admin
         #? /clean
-        self.step_generator.set_admin_command(
+        self.step_generator.simple_admin_command(
             command_name="clean",
+            mongodb_method_name="clean",
         )
 
         #? /fill
-        self.step_generator.set_admin_command(
+        self.step_generator.simple_admin_command(
             command_name="fill",
+            mongodb_method_name="fill",
+        )
+        
+        #? /nv 
+        #? new_version (step 1) -> prompt for version number 
+        self.step_generator.admin_command_with_state(
+            handler_type="command",
+            command_name="nv",
+            
+            active_state=None,
+            next_state=UpdateVersionStates.stages[0],
+            
+            formatted_messages=[self.messages["prompt_new_version_number"]],
+            formatted_variables=["user.real_name"],
+        )
+        
+        #? new_version -> (step 2) -> prompt for version message 
+        self.step_generator.admin_command_with_state(
+            handler_type="state",
+            
+            active_state=UpdateVersionStates.stages[0],
+            next_state=UpdateVersionStates.stages[1],
+            state_variable="version_number",
+            
+            bot_message=self.messages["prompt_new_version_changelog"],
+        )
+        
+        #? new_version -> (step 3) -> final (save to DB) 
+        self.step_generator.admin_command_with_state(
+            handler_type="state",
+            
+            active_state=UpdateVersionStates.stages[1],
+            next_state=None,
+            state_variable="version_changelog",
+            
+            use_state_data=True,
+            requested_state_data="new_version",
+            
+            mongodb_activation_position="after_messages",
+            mongodb_method_name="update_version",
+            
+            bot_reply=self.messages["new_version_success"]
         )
         
         
@@ -119,7 +175,7 @@ class BotMessages:
         
     
     # #? У студента будет свой раздел payment, у админа - свой
-    # #? Админ будет видеть всех студенто, их суммы, доход и статусы оплат (и сколько осталось) 
+    # #? Админ будет видеть всех студентов, их суммы, доход и статусы оплат (и сколько осталось) 
     # #? Студент видит только свой статус и сумму 
             
 

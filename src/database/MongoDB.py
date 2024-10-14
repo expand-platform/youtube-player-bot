@@ -1,10 +1,13 @@
 from datetime import datetime
 
+from telebot.types import Message
+
 from pymongo import MongoClient
 from pymongo.collection import Collection
 
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
+from src.languages.Ru import MONTHS_RU
 from src.users.InitialUsers import InitialUsers
 
 
@@ -33,16 +36,25 @@ class MongoDB:
         self.dotenv = Dotenv()
         
         self.users_collection: Collection = self.database['users']
+        self.version_updates_collection: Collection = self.database['versions']
 
         
     def show_users(self):        
         self.logger.info(f"Коллекция юзеров: {list(self.users_collection.find({}))}")
+        
     
     
     def get_all_users(self):        
         return list(self.users_collection.find({}))
         
         
+    def get_latest_versions_info(self, versions_limit: int = 3):
+        self.version_updates_collection = self.database['versions']
+        latest_versions = list(self.version_updates_collection.find().sort("date", -1).limit(versions_limit))
+        print("🐍 latest_versions from mongo: ", latest_versions)
+
+        return latest_versions
+    
         
     def check_if_user_exists(self): 
         """ returns True if user is in the collection, False - if not """
@@ -70,6 +82,7 @@ class MongoDB:
         
         self.users_collection.update_one(filter=filter_by_id, update=update_operation)
         
+    #? Admin commands
         
     def clean_users(self):
         admin_ids = InitialUsers().admin_ids
@@ -77,5 +90,21 @@ class MongoDB:
         
         self.users_collection.delete_many(filter=delete_filter)
         self.logger.info(f"Коллекция пользователей MongoDB очищена! 🧹")
+        
+        
+    def send_new_version_update(self, version_number: int, changelog: str):
+        now = datetime.now()
+        current_time = now.strftime(f"%d {MONTHS_RU[now.month]}, %H:%M")
+        
+        new_update = {
+            "date": current_time,
+            "version": version_number,
+            "changelog": changelog,
+        }
+        
+        self.version_updates_collection.insert_one(new_update)
+
+        self.logger.info(f"⌛ New version { version_number } published! ")
+        
         
 

@@ -19,8 +19,10 @@ STUDENT_SLASH_COMMANDS = [
     BotCommand("payment", commands["payment"]),
     
     BotCommand("done", commands["done"]),
+    BotCommand("version", commands["version"]),
 ]
 
 # Admin commands:
 # /clean
 # /fill
+# /nv - new version
