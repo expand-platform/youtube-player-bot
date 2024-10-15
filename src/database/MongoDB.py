@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from telebot.types import Message
 
@@ -99,6 +99,10 @@ class MongoDB:
     
     def send_new_version_update(self, version_number: int, changelog: str):
         now = datetime.now()
+        
+        if Dotenv().environment == "production":
+            now = now + timedelta(hours=3) 
+        
         current_time = now.strftime(f"%d {MONTHS_RU[now.month]}, %H:%M")
         
         versions_count = self.versions_collection.count_documents({})
