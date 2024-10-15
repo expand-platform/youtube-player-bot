@@ -40,7 +40,7 @@ class NewGuest:
             "first_name":  self.message.chat.first_name.encode().decode('utf-8'),
             "username": self.message.chat.username,
             
-            "user_id": self.message.from_user.id,
+            "user_id": self.message.chat.id,
             "chat_id": self.message.chat.id,
 
             "access_level": "guest",

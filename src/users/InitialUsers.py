@@ -27,7 +27,7 @@ class InitialUsers:
             user["user_id"] = user_id
             user["chat_id"] = user_id
             
-        self.logger.info(f"ids for users pinned ☑")
+        # self.logger.info(f"ids for users pinned ☑")
         
         
     def get_admin_ids(self):
@@ -36,7 +36,7 @@ class InitialUsers:
                 self.admin_ids.append(admin["user_id"])
                 
                 # self.logger.info(f"admin in cache: {admin}")
-                self.logger.info(f"admin ids: {self.admin_ids}")
+                # self.logger.info(f"admin ids: {self.admin_ids}")
             return self.admin_ids
         else: 
             self.logger.info(f"❌ no admins found! ")

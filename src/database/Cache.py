@@ -25,10 +25,10 @@ class Cache:
         
     def get_users_from_cache(self) -> list:
         if len(self.cached_users) > 0:
-            self.logger.info(f"🟢 users in cache: { self.cached_users }")
+            # self.logger.info(f"🟢 users in cache: { self.cached_users }")
             return self.cached_users
         else:
-            self.logger.info(f"❌ no users in cache: { self.cached_users }")
+            # self.logger.info(f"❌ no users in cache: { self.cached_users }")
             return []
     
     
@@ -53,7 +53,13 @@ class Cache:
                 user[key] = new_value
                 
                 user_name = user.get("real_name", user["first_name"])
-                self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
+                # self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
+                
+    def get_user(self, user_id: int) -> dict:
+        for user in self.cached_users:
+            if user["user_id"] == user_id:
+                return user
+        
                 
 
     def clean_users(self):

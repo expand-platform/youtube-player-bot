@@ -55,16 +55,16 @@ class MongoDB:
         user = self.users_collection.find_one({ "user_id" : self.user_id })
         
         if user: 
-            self.logger.info(f"Чувачок (чувиха) с id {self.user_id} уже зарегистрирован(а) в БД")
+            # self.logger.info(f"Чувачок (чувиха) с id {self.user_id} уже зарегистрирован(а) в БД")
             return True
         else: 
-            self.logger.info(f"Новенький юзер с id {self.user_id}! Сохраняю в базу данных... 😋")
+            # self.logger.info(f"Новенький юзер с id {self.user_id}! Сохраняю в базу данных... 😋")
             return False
         
         
     def save_user(self, new_user: dict) -> None:
         self.users_collection.insert_one(new_user)
-        self.logger.info(f"before: { new_user }  ⏳ ")
+        # self.logger.info(f"before: { new_user }  ⏳ ")
         
         self.logger.info(f"Юзер с id { new_user["user_id"] } сохранён в БД ⏳ ")
         

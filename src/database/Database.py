@@ -38,7 +38,7 @@ class Database:
     #! Now it's called 3 times: Filters, / command and maybe somewhere else (use search for set_active_user)
     def detect_active_user(self, message: Message):
         # self.logger.info(f"looking for user_id { message.from_user.id }...")
-        active_user = self.cache.find_active_user(user_id=message.from_user.id)
+        active_user = self.cache.find_active_user(user_id=message.chat.id)
         
 
         if active_user:
@@ -50,7 +50,7 @@ class Database:
             return active_user
         
         if not active_user:
-            self.logger.info(f"👐 wow, it's someone new: { active_user }")
+            # self.logger.info(f"👐 wow, it's someone new: { active_user }")
             new_guest = NewGuest(message).create_new_guest()
             
             self.mongoDB.save_user(new_guest)
@@ -78,16 +78,15 @@ class Database:
             is_user_exists_in_db = self.mongoDB.users_collection.find_one(filter=filter_by_id)
             
             if not is_user_exists_in_db:
-                self.logger.info(f"❌ user doesn't exist, here's id: { initial_user["user_id"] }")
+                # self.logger.info(f"❌ user doesn't exist, here's id: { initial_user["user_id"] }")
 
                 new_user = NewUser().create_new_user(initial_user)
                 # self.complete_user_profile(new_user)
                 
                 self.mongoDB.save_user(new_user)
-
-            else:
-                self.logger.info(f"✔ user exist: { initial_user["real_name"]}")
-
+            
+            # if user exists:
+            # self.logger.info(f"✔ user exist: { initial_user["real_name"]}")
 
 
     def update_cached_users(self):
@@ -112,7 +111,7 @@ class Database:
             self.cache.cache_user(new_user)
             # self.cached_users.append(new_user)
 
-        self.logger.info(f"🔀 saved initial users to cache: { self.cache.cached_users }")
+        # self.logger.info(f"🔀 saved initial users to cache: { self.cache.cached_users }")
 
 
     def cache_mongo_users(self):
@@ -122,7 +121,8 @@ class Database:
             self.cache.cache_user(mongo_user)
             # self.cached_users.append(mongo_user)
             
-        self.logger.info(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
+        # self.logger.info(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
+            
             
             
     def clean_users(self):
@@ -130,13 +130,12 @@ class Database:
         self.cache.clean_users()
         
         
-        
     #? active user methods
     def complete_user_profile(self, active_user: dict, message: Message):
         # add first_name
         if not active_user.get("first_name"):
             self.update_user(user=active_user, key="first_name", new_value=message.from_user.first_name)
-            self.logger.info(f"first_name updated: { message.from_user.first_name }")
+            # self.logger.info(f"first_name updated: { message.from_user.first_name }")
             
         
         # add username
@@ -148,7 +147,7 @@ class Database:
             else:
                 self.update_user(user=active_user, key="username", new_value=username)
                 
-            self.logger.info(f"username updated: { message.from_user.username }")
+            # self.logger.info(f"username updated: { message.from_user.username }")
         
         
     
@@ -165,22 +164,8 @@ class Database:
         self.cache.update_user(user_id=user["user_id"], key=key, new_value=new_value)
         
         user_name = self.get_real_name(user)
-        self.logger.info(f"📅 Юзер обновлён: { user_name }")
+        self.logger.info(f"📅 Пользователь обновлён (update_user): { user_name }")
         
-    
-    #? Улучшаем заполнение отчётов: 
-    #? 1) Отчёты заполняются, исходя из макс. числа уроков студента 
-    #? 2) И недели месяца 
-    
-    #? В месяце 4 недели (иногда - 5) 
-    #? 1 неделя = 1 или 2 отчёта 
-    
-    #? 1 неделя - 1-2 отчётов максимум
-    #? 2 неделя - 2-4 отчётов максимум
-    #? 3 неделя - 4-6 отчётов максимум
-    #? 4 неделя - 6-8 отчётов максимум
-    
-    
     
     def update_lessons(self, message: Message):
         # работа с данными, затем с кешом и монго
@@ -230,11 +215,11 @@ class Database:
         self.logger.info(f"is_report_allowed: { is_report_allowed }")
         return is_report_allowed
         
-        
     
     def week_of_month(self, dt):
         first_day = dt.replace(day=1)
         dom = dt.day
         adjusted_dom = dom + first_day.weekday()  # Weekday ranges from 0 (Monday) to 6 (Sunday)
         return (adjusted_dom - 1) // 7 + 1
+
 
