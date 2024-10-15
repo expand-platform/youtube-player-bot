@@ -525,16 +525,22 @@ class StepGenerator:
                 keyboard = InlineKeyboardMarkup([], row_width=row_width)
 
                 for user in cached_users:
+                    # print("🐍user: ", user)
                     user_name = user.get("real_name") or user.get("first_name") 
                     user_id = user["user_id"] 
                     
-                    button = InlineKeyboardButton(text=user_name, callback_data=f"user_id:{ user_id }")
+                    button_callback_data = f"user_id:{ user_id }"
+                    print("🐍button_callback_data: ", button_callback_data)
+                    
+                    button = InlineKeyboardButton(text=user_name, callback_data=button_callback_data)
                     keyboard.add(button)
                     
                 return keyboard    
             
             case "select_user_property":
-                callback_user_id = int(callback_user_id.removeprefix("user_id:"))
+                callback_user_id = callback_user_id.removeprefix("user_id:")
+                callback_user_id = int(callback_user_id)
+                
                 print("🐍 callback_user_id: ", callback_user_id)
                 
                 selected_user = Cache().get_user(user_id=callback_user_id)

@@ -3,6 +3,7 @@ INITIAL_USERS = [
         "real_name": "Дамир",
         "username": "best_prepod",
         "access_level": "admin",
+        "first_name": "",
     },
     {
         "real_name": "Оля",
@@ -10,6 +11,7 @@ INITIAL_USERS = [
         "payment_amount": 2500,
         "max_lessons": 8,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Кирилл",
@@ -17,6 +19,7 @@ INITIAL_USERS = [
         "payment_amount": 3500,
         "max_lessons": 8,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Ярослав",
@@ -24,6 +27,7 @@ INITIAL_USERS = [
         "payment_amount": 3300,
         "max_lessons": 8,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Ира",
@@ -31,6 +35,7 @@ INITIAL_USERS = [
         "payment_amount": 3500,
         "max_lessons": 8,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Даня",
@@ -38,6 +43,7 @@ INITIAL_USERS = [
         "payment_amount": 1600,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Артём",
@@ -45,6 +51,7 @@ INITIAL_USERS = [
         "payment_amount": 2000,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Максим",
@@ -52,6 +59,7 @@ INITIAL_USERS = [
         "payment_amount": 2000,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Назар",
@@ -59,6 +67,7 @@ INITIAL_USERS = [
         "payment_amount": 2000,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Олег",
@@ -66,6 +75,7 @@ INITIAL_USERS = [
         "payment_amount": 2300,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Дима",
@@ -73,6 +83,7 @@ INITIAL_USERS = [
         "payment_amount": 2000,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Илья",
@@ -80,6 +91,7 @@ INITIAL_USERS = [
         "payment_amount": 1800,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
     {
         "real_name": "Никита",
@@ -87,5 +99,6 @@ INITIAL_USERS = [
         "payment_amount": 1800,
         "max_lessons": 4,
         "access_level": "student",
+        "first_name": "",
     },
 ]

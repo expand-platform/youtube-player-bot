@@ -22,10 +22,13 @@ class InitialUsers:
     
     def pin_ids_to_users(self) -> None:
         self.user_ids: list = Dotenv().user_ids
+        print("🐍 self.user_ids (pin ids): ", self.user_ids)
         
         for user_id, user in zip(self.user_ids, self.initial_users):
             user["user_id"] = user_id
             user["chat_id"] = user_id
+
+            # print("🐍 user (pin_ids_to_users): ", user)
             
         # self.logger.info(f"ids for users pinned ☑")
         
