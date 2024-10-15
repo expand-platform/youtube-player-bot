@@ -97,9 +97,6 @@ class BotMessages:
             command_name="done",
             access_level=["student"], 
             
-            formatted_messages=[self.messages["done"], self.messages["lessons_left"]],
-            formatted_variables=["user.real_name", "user.done"],
-            
             mongodb_method_name="update_lessons",
             mongodb_activation_position="after_messages",
         )

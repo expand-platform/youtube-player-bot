@@ -1,3 +1,4 @@
+from math import log
 from typing import Any
 from telebot import TeleBot
 from telebot.types import Message
@@ -52,7 +53,6 @@ class StepGenerator:
         
         @self.bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
-            # self.logger.info(f"(/{command_name}) сработала! ")
             active_user = Database().detect_active_user(message)
             
             if set_slash_command:
@@ -60,7 +60,7 @@ class StepGenerator:
             
             #? MongoDB (before messages)
             if mongodb_activation_position == "before_messages" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
                 
             #? Messages (before)
             if bot_before_message:
@@ -81,7 +81,7 @@ class StepGenerator:
                 self.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_after_multiple_messages)
                 
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
             
             self.notify_admin(active_user=active_user, command_name=command_name)
     
@@ -240,36 +240,43 @@ class StepGenerator:
                 return active_user["lessons_left"]
                 
             case "user.done":
-                if active_user["lessons_left"] > 0:
-                    return active_user["lessons_left"] - 1
-                
-                else: return 0  # when zero lessons left
+                return active_user["lessons_left"]
             
-    
+            
     def send_formatted_message(self, message_to_format, formatting_variable, user):
         data_for_formatting = self.get_format_variable(formatting_variable, user)
                 
         self.send_message_with_variable(chat_id=user["user_id"], message=message_to_format, format_variable=data_for_formatting)
 
 
-    def format_message(self, messages, formatting_variables, user):
+    def format_message(self, messages: list, formatting_variables: list, user: dict):
+        # print("🐍 messages (format_message): ", messages, type(messages))
+        # print("🐍 formatting_variables (format_message): ", formatting_variables)
         formatting_data = []
         
         for variable in formatting_variables:
             data = self.get_format_variable(variable, user)
             formatting_data.append(data)
         
-        self.logger.info(f"formatting_data: { formatting_data }")
+        # self.logger.info(f"formatting_data (format_message): { formatting_data }")
         
         for message, format_data in zip(messages, formatting_data):
-            # self.logger.info(f"message: { message }")
-            # self.logger.info(f"format_data: { format_data }")
+            # self.logger.info(f"message (format_message): { message }")
+            # self.logger.info(f"format_data (format_message): { format_data }")
+            
             self.send_message_with_variable(chat_id=user["user_id"], message=message, format_variable=format_data)
             
-        self.logger.info(f"send_multiple_formatted_messages done 🥙")
+        self.logger.info(f"format messages with no errors 🦸‍♀️")
         
     
-    def choose_database_method(self, mongodb_method_name: str, message: Message, data_from_state=None):
+    def choose_database_method(self, 
+                               mongodb_method_name: str, 
+                               message: Message, 
+                               
+                               active_user=None, 
+                               
+                               data_from_state=None
+                            ):
         match mongodb_method_name:
             case "clean":
                 Database().clean_users()
@@ -278,14 +285,36 @@ class StepGenerator:
                 Database().sync_cache_and_remote_users()
                 
             case "update_lessons":
-                self.logger.info(f"updating_lessons...")
-                Database().update_lessons(message)
+                # self.logger.info(f"updating_lessons...")
+                messages = Language().messages
+                
+                is_report_allowed = Database().check_done_reports_limit(max_lessons=active_user["max_lessons"], done_lessons=active_user["done_lessons"])
+
+                
+                #? Сценарий #1: отчёт можно заполнить
+                if is_report_allowed: 
+                    formatted_messages=[ messages["done"], messages["lessons_left"] ]
+                    formatted_variables=["user.real_name", "user.done"]
+                    
+                    Database().update_lessons(message)
+                    
+                    self.format_message(messages=formatted_messages, formatting_variables=formatted_variables, user=active_user)
+                
+                #? Сценарий #w: отчёт нельзя заполнить, лимит
+                else:
+                    formatted_messages=[messages["done_forbidden"]]
+                    formatted_variables=["user.real_name"]
+                    
+                    self.format_message(messages=formatted_messages, formatting_variables=formatted_variables, user=active_user)
+                                    
                 
             case "update_version":
                 MongoDB().send_new_version_update(version_number=data_from_state["version_number"], changelog=data_from_state["version_changelog"])
             
             case "get_latest_versions_info":
                 latest_versions = MongoDB().get_latest_versions_info(versions_limit=3)
+                print("🐍 latest_versions: ", latest_versions)
+                
                 prepared_version_messages = self.prepare_version_messages(mongoDB_objects=latest_versions)
                 print("🐍 prepared_version_messages: ", prepared_version_messages)
                 
@@ -293,10 +322,10 @@ class StepGenerator:
 
                     
     def save_data_in_state(self, 
-                                variable_name: str, 
-                                data_to_save = None, 
-                                state: StateContext = None, 
-                            ):
+                            variable_name: str, 
+                            data_to_save = None, 
+                            state: StateContext = None, 
+                        ):
         match variable_name:
             case "version_number":
                 state.add_data(version_number=data_to_save)
@@ -321,11 +350,10 @@ class StepGenerator:
         prepared_version_messages = [] 
         
         for object in mongoDB_objects:
-            new_message = f"*v{ object["version"] }* ({ object["date"] })\n\n { object["changelog"] } "
+            version_message = f"*v{ object["version"] }* ({ object["date"] })\n\n{ object["changelog"] }"
+            # print("🐍 new formatted object: ", version_message)
             
-            print("🐍 new formatted object: ", new_message)
-            
-            prepared_version_messages.append(new_message)
+            prepared_version_messages.append(version_message)
         
         return prepared_version_messages
 

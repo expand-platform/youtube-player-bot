@@ -1,3 +1,5 @@
+from datetime import datetime, timedelta
+
 from telebot.types import Message
 from src.utils.Logger import Logger
 
@@ -27,7 +29,6 @@ class Database:
         return cls._db_instance
     
     
-    
     def __init__(self):
         self.logger = Logger()
         self.mongoDB = MongoDB()
@@ -35,12 +36,6 @@ class Database:
     #! reduce number of times this method has been called
     #! for super fast time-to-response
     #! Now it's called 3 times: Filters, / command and maybe somewhere else (use search for set_active_user)
-    
-    
-    #! Ещё один баг: после очистки БД я остаюсь там, но код сразу идёт сюда
-    #! И не находит меня и регает как нового пользователя
-    #! Из-за того, что первыми срабатывают фильтры /filter
-    
     def detect_active_user(self, message: Message):
         # self.logger.info(f"looking for user_id { message.from_user.id }...")
         active_user = self.cache.find_active_user(user_id=message.from_user.id)
@@ -130,16 +125,13 @@ class Database:
         self.logger.info(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
             
             
-    #! Сделать так, чтобы после очистки я добавлялся снова в базу данных
-    #! Или чтобы бот распознавал меня, а то как-то это всё грустненько...
     def clean_users(self):
         self.mongoDB.clean_users()
         self.cache.clean_users()
         
         
         
-    """ active user methods"""
-    
+    #? active user methods
     def complete_user_profile(self, active_user: dict, message: Message):
         # add first_name
         if not active_user.get("first_name"):
@@ -159,13 +151,13 @@ class Database:
             self.logger.info(f"username updated: { message.from_user.username }")
         
         
-        
     
     def get_real_name(self, active_user: dict):
         real_name = active_user.get("real_name", active_user["first_name"])
         print("🐍 real_name: ", real_name)
         
         return real_name
+    
     
     
     def update_user(self, user: dict, key: str, new_value: str | int | bool):
@@ -176,6 +168,17 @@ class Database:
         self.logger.info(f"📅 Юзер обновлён: { user_name }")
         
     
+    #? Улучшаем заполнение отчётов: 
+    #? 1) Отчёты заполняются, исходя из макс. числа уроков студента 
+    #? 2) И недели месяца 
+    
+    #? В месяце 4 недели (иногда - 5) 
+    #? 1 неделя = 1 или 2 отчёта 
+    
+    #? 1 неделя - 1-2 отчётов максимум
+    #? 2 неделя - 2-4 отчётов максимум
+    #? 3 неделя - 4-6 отчётов максимум
+    #? 4 неделя - 6-8 отчётов максимум
     
     
     
@@ -191,16 +194,47 @@ class Database:
             
         self.update_user(user=active_user, key="done_lessons", new_value=active_user["done_lessons"])
         self.update_user(user=active_user, key="lessons_left", new_value=active_user["lessons_left"])
-        
+            
         return {
             "done_lessons": active_user["done_lessons"],
             "lessons_left": active_user["lessons_left"]
         }
+        
          
-    
-    # def fill_database_from_scratch(self):
-    #     InitialUsers().pin_ids_to_users()
+    def check_done_reports_limit(self, max_lessons: int, done_lessons: int) -> bool:
+        is_report_allowed = False
+        
+        limit_multiplier = 1
+
+        if max_lessons == 8:
+            limit_multiplier = 2
             
-    #     self.initial_users = InitialUsers().get_initial_users()
-    #     self.cache = Cache()
-    #     self.admin_ids = Cache().get_admin_ids()
+        
+        #? Тут делаем проверку
+        now = datetime.now()
+        current_week_number = self.week_of_month(now)
+        
+        current_time = now.strftime(f"%d %B, %H:%M")
+
+        print(f"Current time: {current_time}")
+        print(f"Current week in month: {current_week_number}")
+        
+        allowed_reports_limit = current_week_number * limit_multiplier # 2 * 1 или 2 * 2
+        print("🐍allowed_reports_limit: ", allowed_reports_limit)
+        
+        
+        if done_lessons < allowed_reports_limit:
+            is_report_allowed = True
+
+        # else...        
+        self.logger.info(f"is_report_allowed: { is_report_allowed }")
+        return is_report_allowed
+        
+        
+    
+    def week_of_month(self, dt):
+        first_day = dt.replace(day=1)
+        dom = dt.day
+        adjusted_dom = dom + first_day.weekday()  # Weekday ranges from 0 (Monday) to 6 (Sunday)
+        return (adjusted_dom - 1) // 7 + 1
+

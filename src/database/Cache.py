@@ -53,7 +53,7 @@ class Cache:
                 user[key] = new_value
                 
                 user_name = user.get("real_name", user["first_name"])
-                self.logger.info(f"user { user_name } updated!")
+                self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
                 
 
     def clean_users(self):

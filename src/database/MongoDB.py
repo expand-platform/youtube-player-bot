@@ -36,7 +36,7 @@ class MongoDB:
         self.dotenv = Dotenv()
         
         self.users_collection: Collection = self.database['users']
-        self.version_updates_collection: Collection = self.database['versions']
+        self.versions_collection: Collection = self.database['versions']
 
         
     def show_users(self):        
@@ -47,13 +47,7 @@ class MongoDB:
     def get_all_users(self):        
         return list(self.users_collection.find({}))
         
-        
-    def get_latest_versions_info(self, versions_limit: int = 3):
-        self.version_updates_collection = self.database['versions']
-        latest_versions = list(self.version_updates_collection.find().sort("date", -1).limit(versions_limit))
-        print("🐍 latest_versions from mongo: ", latest_versions)
 
-        return latest_versions
     
         
     def check_if_user_exists(self): 
@@ -92,19 +86,42 @@ class MongoDB:
         self.logger.info(f"Коллекция пользователей MongoDB очищена! 🧹")
         
         
+    #? Versions
+    def get_latest_versions_info(self, versions_limit: int = 3):
+        self.versions_collection = self.database['versions']
+        latest_versions = list(self.versions_collection.find({}).sort("id", -1).limit(versions_limit))
+        
+        latest_versions.reverse()
+        print("🐍 latest_versions from mongo: ", latest_versions)
+
+        return latest_versions    
+    
+    
     def send_new_version_update(self, version_number: int, changelog: str):
         now = datetime.now()
         current_time = now.strftime(f"%d {MONTHS_RU[now.month]}, %H:%M")
         
+        versions_count = self.versions_collection.count_documents({})
+        
         new_update = {
+            "id": versions_count + 1,
             "date": current_time,
             "version": version_number,
             "changelog": changelog,
         }
         
-        self.version_updates_collection.insert_one(new_update)
+        self.versions_collection.insert_one(new_update)
 
         self.logger.info(f"⌛ New version { version_number } published! ")
         
-        
+    
+    #? Replication: сегодня пишем реплику БД со всей её информацией:
+    #? 1) Создание реплики
+    #? 2) Загрузка из реплики назад в БД
+    
+    
+    #? Зачем? Чтобы, на всякий случай, не потерять данные пользователей
+    
+    
+    
 
