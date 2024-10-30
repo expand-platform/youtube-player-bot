@@ -152,10 +152,17 @@ class Database:
         
     
     def get_real_name(self, active_user: dict):
-        real_name = active_user.get("real_name", active_user["first_name"])
-        print("🐍 real_name: ", real_name)
+        real_name = ""
+        last_name = ""
         
-        return real_name
+        if active_user["access_level"] == "student" or active_user["access_level"] == "admin":
+            real_name = active_user.get("real_name") 
+            last_name = active_user.get("last_name")
+        
+        if active_user["access_level"] == "guest":
+            real_name = active_user.get("first_name") 
+        
+        return real_name, last_name
     
     
     
@@ -163,8 +170,8 @@ class Database:
         self.mongoDB.update_user(user_id=user["user_id"], key=key, new_value=new_value)
         self.cache.update_user(user_id=user["user_id"], key=key, new_value=new_value)
         
-        user_name = self.get_real_name(user)
-        self.logger.info(f"📅 Пользователь обновлён (update_user): { user_name }")
+        real_name, last_name = self.get_real_name(user)
+        self.logger.info(f"📅 Пользователь обновлён (update_user): { real_name } { last_name }")
         
     
     def update_lessons(self, message: Message):

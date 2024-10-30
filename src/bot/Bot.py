@@ -42,10 +42,7 @@ class Bot:
     def connect_telegram(self) -> TeleBot:
         self.bot_instance = TeleBot(token=self.bot_token, use_class_middlewares=True)
         
-        bot_name = self.get_bot_data(bot=self.bot_instance, requested_data="first_name")
-        
         if self.bot_instance:
-            # self.logger.info(f"Подключаюсь к боту '{bot_name}'...")
             self.tell_admin("Начинаю работу...")
             self.tell_admin("/start")
             

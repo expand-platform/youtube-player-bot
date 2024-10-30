@@ -319,9 +319,8 @@ class StepGenerator:
             self.logger.info(f"⚠ Admin here, don't sending notification: { active_user["real_name"] }")
             return
         
-        real_name = active_user.get("real_name", active_user["first_name"]) 
-        last_name = active_user.get("last_name", "")
-        username = active_user["username"]
+        real_name, last_name = Database().get_real_name(active_user=active_user)
+        username = active_user.get("username")
         
         self.notify_admins(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
         self.logger.info(f"{ real_name } зашёл в раздел /{command_name} ✅")
@@ -344,10 +343,8 @@ class StepGenerator:
     def get_format_variable(self, variable_name: str, active_user: dict):
         match variable_name:
             case "user.real_name":
-                return active_user["real_name"]
-            
-            case "user.first_name":
-                return active_user["first_name"]
+                real_name, last_name = Database().get_real_name(active_user=active_user)
+                return real_name
             
             case "user.payment_amount":
                 return active_user["payment_amount"]
@@ -357,6 +354,10 @@ class StepGenerator:
                 
             case "user.done":
                 return active_user["lessons_left"]
+            
+            #! Добавить поддержку для кастомных юзеров, а не только для текущего
+            # case "selected_user.real_name":
+            #     return 
             
             
     def send_formatted_message(self, message_to_format, formatting_variable, user):
@@ -526,13 +527,13 @@ class StepGenerator:
 
                 for user in cached_users:
                     # print("🐍user: ", user)
-                    user_name = user.get("real_name") or user.get("first_name") 
+                    real_name, last_name = Database().get_real_name(active_user=user)
                     user_id = user["user_id"] 
                     
                     button_callback_data = f"user_id:{ user_id }"
                     print("🐍button_callback_data: ", button_callback_data)
                     
-                    button = InlineKeyboardButton(text=user_name, callback_data=button_callback_data)
+                    button = InlineKeyboardButton(text=real_name, callback_data=button_callback_data)
                     keyboard.add(button)
                     
                 return keyboard    

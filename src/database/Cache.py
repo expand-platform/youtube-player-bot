@@ -52,7 +52,7 @@ class Cache:
             if user["user_id"] == user_id:
                 user[key] = new_value
                 
-                user_name = user.get("real_name", user["first_name"])
+                # real_name, last_name = Database().get_real_name(active_user=user)
                 # self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
                 
     def get_user(self, user_id: int) -> dict:

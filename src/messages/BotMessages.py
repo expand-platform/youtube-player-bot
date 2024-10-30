@@ -30,7 +30,7 @@ class BotMessages:
             set_slash_command=True,
             
             formatted_messages=[self.messages["guest_welcome"]],
-            formatted_variables=["user.first_name"],
+            formatted_variables=["user.real_name"],
         )
         
         
