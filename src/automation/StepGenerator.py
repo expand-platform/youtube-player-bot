@@ -434,7 +434,7 @@ class StepGenerator:
                 prepared_version_messages = self.prepare_version_messages(mongoDB_objects=latest_versions)
                 print("🐍 prepared_version_messages: ", prepared_version_messages)
                 
-                self.send_multiple_messages(chat_id=message.chat.id, messages=prepared_version_messages)
+                self.send_multiple_messages(chat_id=message.chat.id, messages=prepared_version_messages, parse_mode="Markdown")
                 
             case "update_user":
                 # self.logger.info(f"state dat (2)  { data_from_state }")
