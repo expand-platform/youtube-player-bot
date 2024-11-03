@@ -200,6 +200,9 @@ class Database:
 
         if max_lessons == 8:
             limit_multiplier = 2
+       
+        if max_lessons == 12:
+            limit_multiplier = 3
             
         
         #? Тут делаем проверку
