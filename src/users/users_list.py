@@ -14,15 +14,15 @@ INITIAL_USERS = [
     {
         "real_name": "Кирилл",
         "last_name": "Кипчарский",
-        "payment_amount": 3840,
-        "max_lessons": 8,
+        "payment_amount": 5280,
+        "max_lessons": 12,
         "access_level": "student",
     },
     {
         "real_name": "Ярослав",
         "last_name": "Горбань",
-        "payment_amount": 3840,
-        "max_lessons": 8,
+        "payment_amount": 5280,
+        "max_lessons": 12,
         "access_level": "student",
     },
     {
