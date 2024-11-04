@@ -62,7 +62,7 @@ class Bot:
         environment = self.dotenv.environment
         
         if environment == "development":
-            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
+            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
             
         else:
             self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)

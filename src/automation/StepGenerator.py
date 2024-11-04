@@ -1,4 +1,5 @@
 from typing import Union
+from src.users.types import UserT
 
 from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
 from telebot.states.sync.context import StateContext
@@ -28,6 +29,8 @@ class StepGenerator:
         self.send_multiple_messages = bot.send_multiple_messages
         self.send_message_with_variable = bot.send_message_with_variable
         self.notify_admins = bot.tell_admin
+        
+        self.messages = Language().messages
     
 
     #* generate any /slash commands 
@@ -119,8 +122,10 @@ class StepGenerator:
                         #? settings
                         access_level = ["student", "admin"],
                         
-                        handler_type: str = "state", # command, state, keyboard
-                        handler_filter: str = None, # user_id, user_property
+                        handler_type: str = "state",  # command, state, keyboard
+                        handler_prefix: str = None,   # uu:, su:
+                        handler_property: str = None,   # user_id, user_property
+                        buttons_callback_prefix: str = None, # user_id, user_property
                         command_name: str = None,
                         
                         #? states
@@ -153,10 +158,6 @@ class StepGenerator:
             message: Union[Message, CallbackQuery], 
             state: StateContext
         ):
-                # self.logger.info(f"message: { message }")
-                # self.logger.info(f"message.from_user.id: { message.from_user.id }")
-                # self.logger.info(f"message.chat.id: { message.chat.id }")
-                
                 #? initial data for keyboard reply
                 call_data = None
                 call_id = None
@@ -179,10 +180,15 @@ class StepGenerator:
                 
                 #? set keyboard, if needed
                 if keyboard_with_before_message or keyboard_with_after_message:
-                    self.logger.info(f"create keyboard... {keyboard_with_before_message}, {keyboard_with_after_message}")
+                    self.logger.info(f"create keyboard with text: {keyboard_with_before_message or keyboard_with_after_message}")
+                    
                     keyboard = self.create_inline_keyboard(
                         keyboard_type=keyboard_with_before_message or keyboard_with_after_message,
                         callback_user_id = call_data,
+                        
+                        # prefixes
+                        handler_prefix=handler_prefix,
+                        buttons_prefix=buttons_callback_prefix,
                     ) 
                 
                 
@@ -191,7 +197,6 @@ class StepGenerator:
                 messages = Language().messages
                 
                 # print("🐍 active_user (step_gen): ",active_user)
-                
                 
                 #? Save state's data or remove it
                 if next_state:
@@ -218,7 +223,14 @@ class StepGenerator:
                     )
                 
                 if use_state_data and requested_state_data:
-                    state_data = self.get_state_data(requested_data=requested_state_data, state=state)
+                    state_data = self.get_state_data(
+                        requested_data=requested_state_data, 
+                        state=state, 
+                        
+                        # prefixes
+                        handler_prefix=handler_prefix,
+                        )
+                    #! тут почему-то None
                     print("🐍 state_data: ", state_data)
                     
 
@@ -307,7 +319,7 @@ class StepGenerator:
             self.bot.register_callback_query_handler(
                 callback=set_custom_command,
                 access_level=access_level, 
-                func=lambda call: call.data.startswith(f"{ handler_filter }:")
+                func=lambda call: call.data.startswith(f"{handler_prefix}:{handler_property}")
             )
             
 
@@ -355,6 +367,14 @@ class StepGenerator:
             case "user.done":
                 return active_user["lessons_left"]
             
+            case "latest_version":
+                latest_version = MongoDB().get_latest_versions_info(versions_limit=1)
+                print("🐍latest_version (get_format_variable, from MongoDB)", latest_version[0]["version"])
+                return latest_version[0]["version"]
+                
+                
+            
+            
             #! Добавить поддержку для кастомных юзеров, а не только для текущего
             # case "selected_user.real_name":
             #     return 
@@ -398,8 +418,10 @@ class StepGenerator:
             case "clean":
                 Database().clean_users()
             
+            
             case "fill":
                 Database().sync_cache_and_remote_users()
+                
                 
             case "update_lessons":
                 # self.logger.info(f"updating_lessons...")
@@ -424,6 +446,7 @@ class StepGenerator:
                     
                     self.format_message(messages=formatted_messages, formatting_variables=formatted_variables, user=active_user)
                 
+                
             case "update_version":
                 MongoDB().send_new_version_update(version_number=data_from_state["version_number"], changelog=data_from_state["version_changelog"])
             
@@ -441,9 +464,33 @@ class StepGenerator:
                 # self.logger.info(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
                 
                 user_to_change = Cache().get_user(data_from_state["user_id"])
-                print("🐍 user_to_change: ",user_to_change)
+                self.logger.info("🐍 user_to_change: ",user_to_change)
                 
                 Database().update_user(user=user_to_change, key=data_from_state["user_property"], new_value=data_from_state["new_value"])
+                
+            case "show_user":
+                selected_user: UserT = Cache().get_user(user_id=data_from_state["user_id"])
+                print("🐍 selected_user: ", selected_user)
+                
+                user_info = ""
+                property_count = 0
+
+                for key, value in selected_user.items():
+                    # add extra empty line between each 2 properties
+                    if property_count % 2 == 0:
+                        user_info += "\n"
+                    
+                    self.logger.info(f"key: {key}")
+                    self.logger.info(f"key: {value}")
+                    
+                    user_info += f"`{ key }`: *{ value }*\n"
+                    property_count += 1
+                    
+                self.bot.send_message(chat_id=active_user["chat_id"], text=user_info, parse_mode="Markdown")
+                    
+                
+                
+                
 
                     
     def save_data_in_state(self, 
@@ -470,7 +517,13 @@ class StepGenerator:
                 state.add_data(new_value=data_to_save)
                 
         
-    def get_state_data(self, requested_data: str = None, state: StateContext = None):
+    def get_state_data(self, 
+                       requested_data: str = None, 
+                       state: StateContext = None,
+                       
+                       handler_prefix: str = None,
+                       ):
+        
         match requested_data:
             case "new_version":
                 with state.data() as data:
@@ -484,21 +537,32 @@ class StepGenerator:
                     
             case "selected_user": 
                 self.logger.info(f"state.data(): { vars(state.data()) }")
+                self.logger.info(f"state.data(): { vars(state.data())["data"] }")
+                
+                state_object = {}
                 
                 with state.data() as data:
-                    user_id = int(data.get("id").removeprefix("user_id:"))
-                    user_property_name = data.get("user_property").removeprefix("user_property:")
-                    new_value = data.get("new_value")
+                    user_id = None
+                    user_property_name = None
+                    new_value = None
                     
-                    self.logger.info(f"user_id: { user_id }")
-                    self.logger.info(f"user_property: { user_property_name } -> {type(user_property_name)}")
-                    self.logger.info(f"new_value: { new_value }")
                     
-                    return {
-                        "user_id": user_id,
-                        "user_property": user_property_name,
-                        "new_value": self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value),
-                    }
+                    if data["id"]:
+                        user_id = int(data.get("id").removeprefix(f"{handler_prefix}:user_id:"))
+                        self.logger.info(f"user_id (get_state_data): { user_id }")
+                        state_object["user_id"] = user_id
+                        
+                    if data["user_property"]:
+                        user_property_name = data.get("user_property").removeprefix(f"{handler_prefix}:user_property:")
+                        self.logger.info(f"user_property (get_state_data): { user_property_name } -> {type(user_property_name)}")
+                        state_object["user_property"] = user_property_name
+                        
+                    if data["new_value"]:
+                        new_value = data.get("new_value")
+                        self.logger.info(f"new_value (get_state_data): { new_value }")
+                        state_object["new_value"] = self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value),
+                    
+                return state_object
 
 
 
@@ -519,8 +583,12 @@ class StepGenerator:
                                keyboard_type: str = "select_users", # properties etc
                                row_width: int = 2,
                                callback_user_id: str = None,
+                               
+                               handler_prefix: str = None,
+                               buttons_prefix: str = None,
                             ) -> InlineKeyboardMarkup:
         match keyboard_type:
+            #! Вот тут проблема, всегда для этих кнопок задаётся одинаковый filter_prefix
             case "select_users":
                 cached_users = Cache().get_users_from_cache()
                 keyboard = InlineKeyboardMarkup([], row_width=row_width)
@@ -530,7 +598,7 @@ class StepGenerator:
                     real_name, last_name = Database().get_real_name(active_user=user)
                     user_id = user["user_id"] 
                     
-                    button_callback_data = f"user_id:{ user_id }"
+                    button_callback_data = f"{handler_prefix}:{buttons_prefix}:{user_id}"
                     print("🐍button_callback_data: ", button_callback_data)
                     
                     button = InlineKeyboardButton(text=real_name, callback_data=button_callback_data)
@@ -539,7 +607,7 @@ class StepGenerator:
                 return keyboard    
             
             case "select_user_property":
-                callback_user_id = callback_user_id.removeprefix("user_id:")
+                callback_user_id = callback_user_id.removeprefix(f"{handler_prefix}:user_id:")
                 callback_user_id = int(callback_user_id)
                 
                 print("🐍 callback_user_id: ", callback_user_id)
@@ -551,7 +619,7 @@ class StepGenerator:
                 
                 for user_property in selected_user:
                     print("🚀 user_property: ", user_property)
-                    button = InlineKeyboardButton(text=user_property, callback_data=f"user_property:{user_property}")
+                    button = InlineKeyboardButton(text=user_property, callback_data=f"{handler_prefix}:user_property:{user_property}")
                     keyboard.add(button)
                     
                 return keyboard    

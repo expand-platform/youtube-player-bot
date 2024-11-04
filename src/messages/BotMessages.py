@@ -1,7 +1,7 @@
 from src.utils.Logger import Logger
 from src.languages.Language import Language
 
-from src.bot.States import VersionSequenceStates, UserUpdateSequenceStates
+from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates
 
 from src.bot.Bot import Bot
 from src.automation.StepGenerator import StepGenerator
@@ -136,8 +136,11 @@ class BotMessages:
             active_state=None,
             next_state=VersionSequenceStates.stages[0],
             
-            formatted_messages=[self.messages["prompt_new_version_number"]],
-            formatted_variables=["user.real_name"],
+            # mongodb_method_name="show_latest_version",
+            # mongodb_activation_position="after_messages",
+            
+            formatted_messages=[self.messages["prompt_new_version_number"], self.messages["latest_version"]],
+            formatted_variables=["user.real_name", "latest_version"],
         )
         
         #? new_version -> (step 2) -> prompt for version message 
@@ -173,18 +176,18 @@ class BotMessages:
         
         
         #? /uu  
-        #? /uu (step 1) -> user selection from DB 
+        #? /uu (step 1) -> user selection
         self.step_generator.set_command_with_sequence(
             access_level=["admin"],
             handler_type="command",
             command_name="uu",
             
             active_state=None,
-            next_state=UserUpdateSequenceStates.stages[0],
+            next_state=UpdateUserSequenceStates.stages[0],
             
-            formatted_messages=[self.messages["select_user"]],
-            formatted_variables=["user.real_name"],
+            bot_before_message=self.messages["select_user"],
             
+            buttons_callback_prefix="user_id",
             keyboard_with_before_message="select_users",
         )
         
@@ -192,13 +195,16 @@ class BotMessages:
         self.step_generator.set_command_with_sequence(
             access_level=["admin"],
             handler_type="keyboard",
-            handler_filter="user_id",
+            handler_prefix="uu",
+            handler_property="user_id",
             
-            active_state=UserUpdateSequenceStates.stages[0],
-            next_state=UserUpdateSequenceStates.stages[1],
+            active_state=UpdateUserSequenceStates.stages[0],
+            next_state=UpdateUserSequenceStates.stages[1],
             state_variable="user_id",
             
             bot_before_message=self.messages["select_property"],
+            
+            buttons_callback_prefix="user_property",
             keyboard_with_before_message="select_user_property",
         )
         
@@ -206,21 +212,21 @@ class BotMessages:
         self.step_generator.set_command_with_sequence(
             access_level=["admin"],
             handler_type="keyboard",
-            handler_filter="user_property",
+            handler_prefix="uu",
+            handler_property="user_property",
             
-            active_state=UserUpdateSequenceStates.stages[1],
-            next_state=UserUpdateSequenceStates.stages[2],
+            active_state=UpdateUserSequenceStates.stages[1],
+            next_state=UpdateUserSequenceStates.stages[2],
             state_variable="user_property",
             
             bot_before_message=self.messages["new_value_prompt"],
-            # keyboard_with_before_message="select_user_property",
         )
         
-        #? /uu (step 4) -> final (success message) 
+        #? /uu (final: step 4) -> success message 
         self.step_generator.set_command_with_sequence(
             handler_type="state",
 
-            active_state=UserUpdateSequenceStates.stages[2],
+            active_state=UpdateUserSequenceStates.stages[2],
             next_state=None,
             state_variable="new_value",
             
@@ -231,6 +237,46 @@ class BotMessages:
             mongodb_method_name="update_user",
             
             bot_after_message=self.messages["update_user_success"]
+        )
+        
+        
+        # ! Пишем команду для вывода текущей информации о пользователе из БД
+        #? /su (see user) 
+        #? /su (step 1) -> user selection 
+        self.step_generator.set_command_with_sequence(
+            access_level=["admin"],
+            handler_type="command",
+            command_name="su",
+            
+            handler_prefix="su",
+            buttons_callback_prefix="user_id",
+            
+            active_state=None,
+            next_state=SeeUserSequenceStates.stages[0],
+            
+            bot_before_message=self.messages["su_intro"],
+            keyboard_with_before_message="select_users",
+        )
+        
+        #? /su (final: step 2) -> show user info 
+        self.step_generator.set_command_with_sequence(
+            access_level=["admin"],
+            handler_type="keyboard",
+                        
+            handler_prefix="su",
+            handler_property="user_id",
+            
+            active_state=SeeUserSequenceStates.stages[0],
+            next_state=None,
+            state_variable="user_id",
+            
+            use_state_data=True,
+            requested_state_data="selected_user",
+            
+            mongodb_method_name="show_user",
+            mongodb_activation_position="before_messages",
+            
+            bot_before_message=self.messages["su_another_user"],
         )
         
         

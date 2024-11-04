@@ -1,6 +1,6 @@
 from telebot.states import State, StatesGroup
 
-#? version
+#? /nv: new version
 class VersionSequenceStates(StatesGroup):
     version_number_prompt = State()
     version_message_prompt = State()
@@ -10,8 +10,9 @@ class VersionSequenceStates(StatesGroup):
         version_message_prompt,
     ] 
 
-#? update user
-class UserUpdateSequenceStates(StatesGroup):
+
+#? / uu: update user
+class UpdateUserSequenceStates(StatesGroup):
     select_user = State()
     select_property = State()
     new_value_prompt = State()
@@ -20,6 +21,14 @@ class UserUpdateSequenceStates(StatesGroup):
         select_user,
         select_property,
         new_value_prompt,
-    ] 
+    ]
+    
+#? /su: see use 
+class SeeUserSequenceStates(StatesGroup):
+    su_select_user = State()
+    
+    stages = [
+        su_select_user
+    ]
         
         
