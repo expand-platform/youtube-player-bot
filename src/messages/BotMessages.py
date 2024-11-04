@@ -181,6 +181,7 @@ class BotMessages:
             access_level=["admin"],
             handler_type="command",
             command_name="uu",
+            handler_prefix="uu",
             
             active_state=None,
             next_state=UpdateUserSequenceStates.stages[0],
@@ -225,6 +226,7 @@ class BotMessages:
         #? /uu (final: step 4) -> success message 
         self.step_generator.set_command_with_sequence(
             handler_type="state",
+            handler_prefix="uu",
 
             active_state=UpdateUserSequenceStates.stages[2],
             next_state=None,

@@ -464,7 +464,7 @@ class StepGenerator:
                 # self.logger.info(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
                 
                 user_to_change = Cache().get_user(data_from_state["user_id"])
-                self.logger.info("🐍 user_to_change: ",user_to_change)
+                self.logger.info(f"🐍 user_to_change: {user_to_change}")
                 
                 Database().update_user(user=user_to_change, key=data_from_state["user_property"], new_value=data_from_state["new_value"])
                 
@@ -536,7 +536,6 @@ class StepGenerator:
                     }
                     
             case "selected_user": 
-                self.logger.info(f"state.data(): { vars(state.data()) }")
                 self.logger.info(f"state.data(): { vars(state.data())["data"] }")
                 
                 state_object = {}
@@ -560,7 +559,7 @@ class StepGenerator:
                     if data["new_value"]:
                         new_value = data.get("new_value")
                         self.logger.info(f"new_value (get_state_data): { new_value }")
-                        state_object["new_value"] = self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value),
+                        state_object["new_value"] = self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value)
                     
                 return state_object
 
