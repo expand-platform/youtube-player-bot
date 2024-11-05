@@ -241,7 +241,7 @@ class StepGenerator:
                 if bot_before_message:
                     # when keyboard, send signal for callback_query
                     if handler_type == "keyboard":
-                        self.bot.answer_callback_query(
+                        self.bot._bot.answer_callback_query(
                             callback_query_id=call_id, 
                             text="",
                         )
@@ -278,7 +278,7 @@ class StepGenerator:
                 if bot_after_message:
                     # when keyboard, send signal for callback_query
                     if handler_type == "keyboard":
-                        self.bot.answer_callback_query(
+                        self.bot._bot.answer_callback_query(
                             callback_query_id=call_id, 
                             text="",
                         )

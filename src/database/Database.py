@@ -121,14 +121,16 @@ class Database:
 
 
     def cache_mongo_users(self):
+        self.cache.clean_users() # 1 user is left: admin
         mongo_users = self.mongoDB.get_all_users()
         
-        for mongo_user in mongo_users:
+        #! Костыль detected
+        #! skip first user from db: admin
+        for mongo_user in mongo_users[1:]:
             self.cache.cache_user(mongo_user)
             # self.cached_users.append(mongo_user)
             
         # self.log(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
-            
             
             
     def clean_users(self):

@@ -19,7 +19,7 @@ class Cache:
         return cls._cache_instance
     
     def __init__(self):
-        self.logger = Logger()
+        self.log = Logger().info
     
             
     def cache_user(self, new_user: dict) -> None:
@@ -28,22 +28,22 @@ class Cache:
         
     def get_users_from_cache(self) -> list:
         if len(self.users) > 0:
-            # self.logger.info(f"🟢 users in cache: { self.cached_users }")
+            # self.log(f"🟢 users in cache: { self.cached_users }")
             return self.users
         else:
-            # self.logger.info(f"❌ no users in cache: { self.cached_users }")
+            # self.log(f"❌ no users in cache: { self.cached_users }")
             return []
     
     
     def get_admin_ids(self) -> list:
-        # self.logger.info(f"admin ids: { self.admin_ids }")
+        # self.log(f"admin ids: { self.admin_ids }")
         return self.admin_ids
     
     
     def find_active_user(self, user_id):
-        # self.logger.info(f"user_id (Cache.find_active_user): { user_id }")
+        # self.log(f"user_id (Cache.find_active_user): { user_id }")
         for user in self.users:
-            # self.logger.info(f"user: { user }")
+            # self.log(f"user: { user }")
             if user["user_id"] == user_id:
                 return user
         # if user not found
@@ -56,7 +56,7 @@ class Cache:
                 user[key] = new_value
                 
                 # real_name, last_name = Database().get_real_name(active_user=user)
-                # self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
+                # self.log(f"user { user_name } updated: key: {key} and value {new_value}")
                 
     def get_user(self, user_id: int) -> dict:
         for user in self.users:
@@ -67,7 +67,7 @@ class Cache:
 
     def clean_users(self):
         self.users = []
-        self.logger.info(f"Кеш пользователей очищен! 🧹")
+        self.log(f"Кеш пользователей очищен! 🧹")
         
         initial_users = InitialUsers().get_initial_users()
         admin = NewUser().create_new_user(user_info=initial_users[0])
