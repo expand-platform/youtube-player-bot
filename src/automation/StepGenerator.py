@@ -5,10 +5,9 @@ from telebot.types import Message, InlineKeyboardMarkup, InlineKeyboardButton, C
 from telebot.states.sync.context import StateContext
 
 from src.database.MongoDB import MongoDB
-from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
-from src.messages.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS
+from src.dialogs.data.commands_list import GUEST_SLASH_COMMANDS, STUDENT_SLASH_COMMANDS
 
 from src.bot.Bot import Bot
 
@@ -20,16 +19,9 @@ from src.languages.Language import Language
 
 
 class StepGenerator:
-    def __init__(self, bot: Bot):
-        self.logger = Logger()
-        
-        self.environment = Dotenv().environment
-        self.bot = bot.bot_instance
-        
-        self.send_multiple_messages = bot.send_multiple_messages
-        self.send_message_with_variable = bot.send_message_with_variable
-        self.notify_admins = bot.tell_admin
-        
+    def __init__(self):
+        self.log = Logger().info
+        self.bot = Bot()
         self.messages = Language().messages
     
 
@@ -54,7 +46,7 @@ class StepGenerator:
                 ):
 
         
-        @self.bot.message_handler(commands=[command_name], access_level=access_level)
+        @self.bot._bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
             active_user = Database().detect_active_user(message)
             
@@ -67,10 +59,10 @@ class StepGenerator:
                 
             #? Messages (before)
             if bot_before_message:
-                self.bot.send_message(chat_id=active_user["user_id"], text=bot_before_message, parse_mode="Markdown")
+                self.bot._bot.send_message(chat_id=active_user["user_id"], text=bot_before_message, parse_mode="Markdown")
                              
             if bot_before_multiple_messages:
-                self.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_before_multiple_messages)
+                self.bot.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_before_multiple_messages)
                 
             #? Formatted messages
             if formatted_messages and formatted_variables:
@@ -78,10 +70,10 @@ class StepGenerator:
                 
             #? After messages
             if bot_after_message:
-                self.bot.send_message(chat_id=active_user["user_id"], text=bot_after_message, parse_mode="Markdown")
+                self.bot._bot.send_message(chat_id=active_user["user_id"], text=bot_after_message, parse_mode="Markdown")
                 
             if bot_after_multiple_messages:
-                self.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_after_multiple_messages)
+                self.bot.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_after_multiple_messages)
                 
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
@@ -99,7 +91,7 @@ class StepGenerator:
                         mongodb_method_name: str = None,
                         mongodb_activation_position: str = "after_messages",  # "before_messages", 
                         ):
-        @self.bot.message_handler(commands=[command_name], access_level=["admin"])
+        @self.bot._bot.message_handler(commands=[command_name], access_level=["admin"])
         def set_admin_command(message: Message):
             
             active_user = Database().detect_active_user(message)
@@ -109,7 +101,7 @@ class StepGenerator:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
 
             if bot_extra_message:
-                self.bot.send_message(chat_id=active_user["user_id"], text=bot_extra_message, parse_mode="Markdown")
+                self.bot._bot.send_message(chat_id=active_user["user_id"], text=bot_extra_message, parse_mode="Markdown")
             
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
@@ -180,7 +172,7 @@ class StepGenerator:
                 
                 #? set keyboard, if needed
                 if keyboard_with_before_message or keyboard_with_after_message:
-                    self.logger.info(f"create keyboard with text: {keyboard_with_before_message or keyboard_with_after_message}")
+                    self.log(f"create keyboard with text: {keyboard_with_before_message or keyboard_with_after_message}")
                     
                     keyboard = self.create_inline_keyboard(
                         keyboard_type=keyboard_with_before_message or keyboard_with_after_message,
@@ -212,8 +204,8 @@ class StepGenerator:
                         data_for_state = message.text
                     
                     
-                    self.logger.info(f"user's reply or selection: { data_for_state }")
-                    # self.logger.info(f"state: { state }")
+                    self.log(f"user's reply or selection: { data_for_state }")
+                    # self.log(f"state: { state }")
                     
                     
                     self.save_data_in_state(
@@ -253,10 +245,10 @@ class StepGenerator:
                             text="",
                         )
                         
-                    self.logger.info(f"bot answered button (sends hints)")
-                    self.logger.info(f"active_user: { active_user }")
+                    self.log(f"bot answered button (sends hints)")
+                    self.log(f"active_user: { active_user }")
                         
-                    self.bot.send_message(
+                    self.bot._bot.send_message(
                         chat_id=active_user["user_id"],
                         text=bot_before_message,
                         reply_markup=keyboard or None,
@@ -290,7 +282,7 @@ class StepGenerator:
                             text="",
                         )
                     
-                    self.bot.send_message(
+                    self.bot._bot.send_message(
                         chat_id=active_user["user_id"], 
                         text=bot_after_message, 
                         reply_markup=keyboard or None,
@@ -302,21 +294,21 @@ class StepGenerator:
         
         # choose type of message handler
         if handler_type == "command":
-            self.bot.register_message_handler(
+            self.bot._bot.register_message_handler(
                 callback=set_custom_command, 
                 commands=[command_name], 
                 access_level=access_level
             )
             
         if handler_type == "state":
-            self.bot.register_message_handler(
+            self.bot._bot.register_message_handler(
                 callback=set_custom_command, 
                 state=active_state, 
                 access_level=access_level
             )
             
         if handler_type == "keyboard":
-            self.bot.register_callback_query_handler(
+            self.bot._bot.register_callback_query_handler(
                 callback=set_custom_command,
                 access_level=access_level, 
                 func=lambda call: call.data.startswith(f"{handler_prefix}:{handler_property}")
@@ -328,27 +320,27 @@ class StepGenerator:
     def notify_admin(self, active_user: dict, command_name):
         # check if user is admin
         if active_user["user_id"] in Database().admin_ids:
-            self.logger.info(f"⚠ Admin here, don't sending notification: { active_user["real_name"] }")
+            self.log(f"⚠ Admin here, don't sending notification: { active_user["real_name"] }")
             return
         
         real_name, last_name = Database().get_real_name(active_user=active_user)
         username = active_user.get("username")
         
         self.notify_admins(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
-        self.logger.info(f"{ real_name } зашёл в раздел /{command_name} ✅")
+        self.log(f"{ real_name } зашёл в раздел /{command_name} ✅")
     
     
     def set_slash_commands(self, active_user):
         if active_user["access_level"] == "guest":
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
+            self.bot._bot.set_my_commands([])
+            self.bot._bot.set_my_commands(commands=GUEST_SLASH_COMMANDS)
         
         # if "student" or "admin"
         else:
-            self.bot.set_my_commands([])
-            self.bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
+            self.bot._bot.set_my_commands([])
+            self.bot._bot.set_my_commands(commands=STUDENT_SLASH_COMMANDS)
             
-        self.logger.info('😎 slash commands set')
+        self.log('😎 slash commands set')
     
     
     
@@ -371,8 +363,6 @@ class StepGenerator:
                 latest_version = MongoDB().get_latest_versions_info(versions_limit=1)
                 print("🐍latest_version (get_format_variable, from MongoDB)", latest_version[0]["version"])
                 return latest_version[0]["version"]
-                
-                
             
             
             #! Добавить поддержку для кастомных юзеров, а не только для текущего
@@ -383,7 +373,7 @@ class StepGenerator:
     def send_formatted_message(self, message_to_format, formatting_variable, user):
         data_for_formatting = self.get_format_variable(formatting_variable, user)
                 
-        self.send_message_with_variable(chat_id=user["user_id"], message=message_to_format, format_variable=data_for_formatting)
+        self.bot.send_message_with_variable(chat_id=user["user_id"], message=message_to_format, format_variable=data_for_formatting)
 
 
     def format_message(self, messages: list, formatting_variables: list, user: dict, reply_markup=None):
@@ -395,15 +385,15 @@ class StepGenerator:
             data = self.get_format_variable(variable, user)
             formatting_data.append(data)
         
-        # self.logger.info(f"formatting_data (format_message): { formatting_data }")
+        # self.log(f"formatting_data (format_message): { formatting_data }")
         
         for message, format_data in zip(messages, formatting_data):
-            # self.logger.info(f"message (format_message): { message }")
-            # self.logger.info(f"format_data (format_message): { format_data }")
+            # self.log(f"message (format_message): { message }")
+            # self.log(f"format_data (format_message): { format_data }")
             
-            self.send_message_with_variable(chat_id=user["user_id"], message=message, format_variable=format_data, reply_markup=reply_markup)
+            self.bot.send_message_with_variable(chat_id=user["user_id"], message=message, format_variable=format_data, reply_markup=reply_markup)
             
-        # self.logger.info(f"format messages with no errors 🦸‍♀️")
+        # self.log(f"format messages with no errors 🦸‍♀️")
         
     
     def choose_database_method(self, 
@@ -424,7 +414,7 @@ class StepGenerator:
                 
                 
             case "update_lessons":
-                # self.logger.info(f"updating_lessons...")
+                # self.log(f"updating_lessons...")
                 messages = Language().messages
                 
                 is_report_allowed = Database().check_done_reports_limit(max_lessons=active_user["max_lessons"], done_lessons=active_user["done_lessons"])
@@ -457,14 +447,14 @@ class StepGenerator:
                 prepared_version_messages = self.prepare_version_messages(mongoDB_objects=latest_versions)
                 print("🐍 prepared_version_messages: ", prepared_version_messages)
                 
-                self.send_multiple_messages(chat_id=message.chat.id, messages=prepared_version_messages, parse_mode="Markdown")
+                self.bot.send_multiple_messages(chat_id=message.chat.id, messages=prepared_version_messages, parse_mode="Markdown")
                 
             case "update_user":
-                # self.logger.info(f"state dat (2)  { data_from_state }")
-                # self.logger.info(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
+                # self.log(f"state dat (2)  { data_from_state }")
+                # self.log(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
                 
                 user_to_change = Cache().get_user(data_from_state["user_id"])
-                self.logger.info(f"🐍 user_to_change: {user_to_change}")
+                self.log(f"🐍 user_to_change: {user_to_change}")
                 
                 Database().update_user(user=user_to_change, key=data_from_state["user_property"], new_value=data_from_state["new_value"])
                 
@@ -480,13 +470,13 @@ class StepGenerator:
                     if property_count % 2 == 0:
                         user_info += "\n"
                     
-                    self.logger.info(f"key: {key}")
-                    self.logger.info(f"key: {value}")
+                    self.log(f"key: {key}")
+                    self.log(f"key: {value}")
                     
                     user_info += f"`{ key }`: *{ value }*\n"
                     property_count += 1
                     
-                self.bot.send_message(chat_id=active_user["chat_id"], text=user_info, parse_mode="Markdown")
+                self.bot._bot.send_message(chat_id=active_user["chat_id"], text=user_info, parse_mode="Markdown")
                     
                 
                 
@@ -536,7 +526,7 @@ class StepGenerator:
                     }
                     
             case "selected_user": 
-                self.logger.info(f"state.data(): { vars(state.data())["data"] }")
+                self.log(f"state.data(): { vars(state.data())["data"] }")
                 
                 state_object = {}
                 
@@ -548,17 +538,17 @@ class StepGenerator:
                     
                     if data["id"]:
                         user_id = int(data.get("id").removeprefix(f"{handler_prefix}:user_id:"))
-                        self.logger.info(f"user_id (get_state_data): { user_id }")
+                        self.log(f"user_id (get_state_data): { user_id }")
                         state_object["user_id"] = user_id
                         
                     if data["user_property"]:
                         user_property_name = data.get("user_property").removeprefix(f"{handler_prefix}:user_property:")
-                        self.logger.info(f"user_property (get_state_data): { user_property_name } -> {type(user_property_name)}")
+                        self.log(f"user_property (get_state_data): { user_property_name } -> {type(user_property_name)}")
                         state_object["user_property"] = user_property_name
                         
                     if data["new_value"]:
                         new_value = data.get("new_value")
-                        self.logger.info(f"new_value (get_state_data): { new_value }")
+                        self.log(f"new_value (get_state_data): { new_value }")
                         state_object["new_value"] = self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value)
                     
                 return state_object

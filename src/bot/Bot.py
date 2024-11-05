@@ -12,61 +12,46 @@ from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 
 from src.database.Cache import Cache
-from src.database.Database import Database
-
-
 
 
 class Bot:
     """class to connect and run bot"""
 
-    _bot_instance = None
+    _new_bot_instance = None
+    _bot: TeleBot = None
     
     def __new__(cls, *args, **kwargs):
-        if cls._bot_instance is None:
-            cls._bot_instance = super(Bot, cls).__new__(cls)
-        return cls._bot_instance
+        if cls._new_bot_instance is None:
+            cls._new_bot_instance = super(Bot, cls).__new__(cls)
+            cls._new_bot_instance._bot = TeleBot(token=Dotenv().bot_token, use_class_middlewares=True)
+            
+        return cls._new_bot_instance
 
 
     def __init__(self):
-        self.dotenv = Dotenv()
-        self.bot_token = self.dotenv.bot_token
-        self.logger = Logger()
-
-        self.bot_instance = None
-        self.bot_username = None
+        self.log = Logger().info
+        self.environment = Dotenv().environment
         
-        self.connect_telegram()
+    def get_bot_instance(self):
+        return self._bot
         
 
-    def connect_telegram(self) -> TeleBot:
-        self.bot_instance = TeleBot(token=self.bot_token, use_class_middlewares=True)
-        
-        if self.bot_instance:
+    def start_bot(self) -> TeleBot:
+        if self._bot:
+            self.set_middleware()
+            
             self.tell_admin("Начинаю работу...")
             self.tell_admin("/start")
             
-        self.bot_username = self.get_bot_data(bot=self.bot_instance, requested_data="username")
+        bot_username = self.get_bot_data(bot=self._bot, requested_data="username")
+        self.log(f"Бот @{bot_username} подключён! Нажми /start для начала")
         
-        
-    # enable bot to listening for commands
-    def connect_bot(self) -> None:
-        bot_username = self.get_bot_data(bot=self.bot_instance, requested_data="username")
-        self.logger.info(f"Бот @{bot_username} подключён! Нажми /start для начала")
-        
-        self.set_infinity_polling()
+        if self.environment == "development":
+            self._bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
+
+        self._bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
         
 
-    def set_infinity_polling(self):
-        """ change polling options based on environment """
-        environment = self.dotenv.environment
-        
-        if environment == "development":
-            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
-            
-        else:
-            self.bot_instance.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
-            
 
     def get_bot_data(self, bot: TeleBot, requested_data: str) -> str:
         """gets bot's name, @username etc"""
@@ -77,39 +62,36 @@ class Bot:
         return desired_info
     
     
-    def start_bot(self) -> None:
-        self.bot_instance.add_custom_filter(StateFilter(self.bot_instance))
-        self.bot_instance.add_custom_filter(IsDigitFilter())
-        self.bot_instance.add_custom_filter(TextMatchFilter())
-        self.bot_instance.add_custom_filter(AccessLevelFilter(self.bot_instance))
-
+    def set_middleware(self) -> None:
+        self._bot.add_custom_filter(StateFilter(self._bot))
+        self._bot.add_custom_filter(IsDigitFilter())
+        self._bot.add_custom_filter(TextMatchFilter())
+        self._bot.add_custom_filter(AccessLevelFilter(self._bot))
         
-        self.bot_instance.setup_middleware(StateMiddleware(self.bot_instance))
-        
-        self.connect_bot()
+        self._bot.setup_middleware(StateMiddleware(self._bot))
         
         
     def disconnect_bot(self) -> None:
         """ kills the active bot instance, drops connection """
-        self.bot_instance.stop_bot()
-        # self.logger.info('бот выключен ❌')
+        self._bot.stop_bot()
+        self.log('бот выключен ❌')
         
         
     def tell_admin(self, message: str) -> None:
         admin_ids = Cache().admin_ids
         
         for admin_id in admin_ids:
-            self.bot_instance.send_message(chat_id=admin_id, text=message)
+            self._bot.send_message(chat_id=admin_id, text=message)
         
         
     def send_multiple_messages(self, chat_id, messages: list, disable_preview=False, parse_mode="Markdown"):
         for message in messages:
-            self.bot_instance.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode, disable_web_page_preview=disable_preview)
+            self._bot.send_message(chat_id=chat_id, text=message, parse_mode=parse_mode, disable_web_page_preview=disable_preview)
     
         
     def send_message_with_variable(self, chat_id: int, message: str, reply_markup: InlineKeyboardMarkup, format_variable: Union[str, int], parse_mode="Markdown"):
-        # self.logger.info(f"message (bot): { message }")
-        # self.logger.info(f"format_variable (bot): { format_variable }")
+        # self.log(f"message (bot): { message }")
+        # self.log(f"format_variable (bot): { format_variable }")
         
         formatted_message = message.format(format_variable)
-        self.bot_instance.send_message(chat_id=chat_id, text=formatted_message, reply_markup=reply_markup, parse_mode=parse_mode)
+        self._bot.send_message(chat_id=chat_id, text=formatted_message, reply_markup=reply_markup, parse_mode=parse_mode)

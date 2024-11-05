@@ -1,43 +1,65 @@
-from contextlib import asynccontextmanager
-from math import log
 from os import getenv
-
-from fastapi import FastAPI
+from threading import Thread
+from keyboard import add_hotkey
 import uvicorn
+from fastapi import FastAPI
+from contextlib import asynccontextmanager
 
-from src.utils.Logger import Logger 
-
+from src.utils.Logger import Logger
 from src.database.Database import Database
-
 from src.bot.Bot import Bot
-from src.messages.BotMessages import BotMessages
+from src.dialogs.BotDialogs import BotDialogs
 
 
-@asynccontextmanager
-async def main(app: FastAPI):
-    logger = Logger()
-    logger.info('сервер FastAPI / uvicorn включён 👀')
+class Server:
+    def __init__(self):
+        self.log = Logger().info
+        self.bot = Bot()
+        
+        self.app = FastAPI(lifespan=self.start_server)
+        
+        self.listener_thread = Thread(target=self.handle_ctrl_c)
+        self.listener_thread.start()
+        
+        
+    @asynccontextmanager
+    async def start_server(self, app: FastAPI):
+        self.log("сервер FastAPI / uvicorn включён 👀")
 
-    # prepare initial users and cache
-    database = Database()
-    database.sync_cache_and_remote_users()
-    
-    # set commands and message handlers
-    school_bot = Bot()
-    BotMessages(school_bot)
-    school_bot.start_bot()
+        database = Database()
+        database.sync_cache_and_remote_users()
+        
+        BotDialogs().enable_dialogs()
+        
+        bot_thread = Thread(target=self.bot.start_bot)
+        bot_thread.start()
+
+        try:
+            yield  
+        
+        except KeyboardInterrupt:
+            self.log("Manual shutdown triggered.")
+        
+        finally:
+            self.bot.disconnect_bot()
+            bot_thread.join()  
+            self.log("сервер выключен ❌")
+            self.listener_thread.join()  
 
 
-    yield
-    school_bot.disconnect_bot()
-    logger.info('сервер выключен ❌')
-    
-    
+    def handle_ctrl_c(self):
+        add_hotkey("ctrl+c", self.shutdown)
+        
 
-    
-    
+    def shutdown(self):
+        self.log("CTRL+C detected from keyboard! Initiating shutdown...")
+        self.bot.disconnect_bot()
+        uvicorn.server.Server.should_exit = True
+        self.log("Server and bot shutdown complete.")
 
-app = FastAPI(lifespan=main)
+
+server = Server()
+app = server.app
 
 
 if __name__ == "__main__":

@@ -11,6 +11,8 @@ psutil = "*"
 uvicorn = "*"
 fastapi = "*"
 pymongo = "*"
+apscheduler = "*"
+keyboard = "*"
 
 [dev-packages]
 
