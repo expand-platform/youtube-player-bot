@@ -1,9 +1,9 @@
+from calendar import c
 from datetime import datetime, timedelta
-
-from telebot.types import Message
 
 from pymongo import MongoClient
 from pymongo.collection import Collection
+from pymongo.database import Database
 
 from src.utils.Logger import Logger
 from src.utils.Dotenv import Dotenv
@@ -17,14 +17,22 @@ from src.users.InitialUsers import InitialUsers
 class MongoDB:
     _mongoDB_instance = None
     
+    client: MongoClient = None
+    
+    database: Database = None
+    replica_db: Database = None
+    
     def __new__(cls, *args, **kwargs):
         DATABASE_NAME = "school-bot"
+        REPLICA_DB_NAME = "replica"
+        
         MONGO_URI = Dotenv().mongodb_string
         
         if cls._mongoDB_instance is None:
             cls._mongoDB_instance = super().__new__(cls)
             cls._mongoDB_instance.client = MongoClient(MONGO_URI, maxPoolSize=1)
             cls._mongoDB_instance.database = cls._mongoDB_instance.client[DATABASE_NAME] 
+            cls._mongoDB_instance.replica_db = cls._mongoDB_instance.client[REPLICA_DB_NAME] 
             
             Logger().info(f"База данных {DATABASE_NAME} подключена!")
         
@@ -32,22 +40,35 @@ class MongoDB:
 
     
     def __init__(self) -> None:
-        self.logger = Logger()
+        self.log = Logger().info
         self.dotenv = Dotenv()
         
+        #? bot's collections
         self.users_collection: Collection = self.database['users']
         self.versions_collection: Collection = self.database['versions']
+        
+        #? replica's collections
+        self.replica_users: Collection = self.replica_db["users"]
 
         
     def show_users(self):        
-        self.logger.info(f"Коллекция юзеров: {list(self.users_collection.find({}))}")
+        self.log(f"Коллекция юзеров: {list(self.users_collection.find({}))}")
         
-    
     
     def get_all_users(self):        
         return list(self.users_collection.find({}))
-        
+   
+    def get_all_versions(self):        
+        return list(self.versions_collection.find({}))
 
+
+    def get_replica_documents(self, collection_name = "users"):
+        return list(self.replica_db[collection_name].find({}))
+    
+    def get_all_documents(self, database_name = "school-bot", collection_name = "users"):
+        database = self.client[database_name]
+        
+        return list(database[collection_name].find({}))
     
         
     def check_if_user_exists(self): 
@@ -55,18 +76,18 @@ class MongoDB:
         user = self.users_collection.find_one({ "user_id" : self.user_id })
         
         if user: 
-            # self.logger.info(f"Чувачок (чувиха) с id {self.user_id} уже зарегистрирован(а) в БД")
+            # self.log(f"Чувачок (чувиха) с id {self.user_id} уже зарегистрирован(а) в БД")
             return True
         else: 
-            # self.logger.info(f"Новенький юзер с id {self.user_id}! Сохраняю в базу данных... 😋")
+            # self.log(f"Новенький юзер с id {self.user_id}! Сохраняю в базу данных... 😋")
             return False
         
         
     def save_user(self, new_user: dict) -> None:
         self.users_collection.insert_one(new_user)
-        # self.logger.info(f"before: { new_user }  ⏳ ")
+        # self.log(f"before: { new_user }  ⏳ ")
         
-        self.logger.info(f"Юзер с id { new_user["user_id"] } сохранён в БД ⏳ ")
+        self.log(f"Юзер с id { new_user["user_id"] } сохранён в БД ⏳ ")
         
 
         
@@ -83,7 +104,7 @@ class MongoDB:
         delete_filter = {"user_id": {"$nin": admin_ids}}
         
         self.users_collection.delete_many(filter=delete_filter)
-        self.logger.info(f"Коллекция пользователей MongoDB очищена! 🧹")
+        self.log(f"Коллекция пользователей MongoDB очищена! 🧹")
         
         
     #? Versions
@@ -116,15 +137,34 @@ class MongoDB:
         
         self.versions_collection.insert_one(new_update)
 
-        self.logger.info(f"⌛ New version { version_number } published! ")
+        self.log(f"⌛ New version { version_number } published! ")
         
     
-    #? Replication: сегодня пишем реплику БД со всей её информацией:
-    #? 1) Создание реплики
-    #? 2) Загрузка из реплики назад в БД
+    def replicate_collection(self, collection_name: str = "users"):
+        existing_documents = self.get_all_users()
+        
+        if collection_name == "versions":
+            existing_documents = self.get_all_versions()
+            
+        replica_collection = self.replica_db[collection_name]
+        replica_collection.insert_many(existing_documents)
+        
+        self.log(f"Коллекция {collection_name} успешно реплицирована 🐱‍🐉")
+        
+        
+    def load_replica(self, collection_name: str = "users"):
+        collection_to_erase = self.database[collection_name]
+        collection_to_erase.delete_many({})
+        
+        new_documents = self.get_all_documents(database_name="replica", collection_name=collection_name)
+        
+        collection_to_erase.insert_many(new_documents)
+        
+        self.log(f"Коллекция {collection_name} успешно восстановлена из реплики в основную базу данных! 🐱‍🐉")
+        
+        
+        
     
-    
-    #? Зачем? Чтобы, на всякий случай, не потерять данные пользователей
     
     
     

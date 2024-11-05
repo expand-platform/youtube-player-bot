@@ -1,4 +1,4 @@
-from datetime import datetime, timedelta
+from datetime import datetime
 
 from telebot.types import Message
 from src.utils.Logger import Logger
@@ -11,9 +11,12 @@ from src.database.MongoDB import MongoDB
 
 class Database:
     """ Higher-level class for syncing Cache (users) and MongoDB """
-    
-    
+
     _db_instance = None
+    
+    initial_users: list = None
+    cache: Cache = None
+    admins_id: list = None
     
     def __new__(cls, *args, **kwargs):
         if cls._db_instance is None:
@@ -30,19 +33,22 @@ class Database:
     
     
     def __init__(self):
-        self.logger = Logger()
+        self.log = Logger().info
         self.mongoDB = MongoDB()
+        
+    def get_users(self):
+        return self.cache.users
         
     #! reduce number of times this method has been called
     #! for super fast time-to-response
     #! Now it's called 3 times: Filters, / command and maybe somewhere else (use search for set_active_user)
     def detect_active_user(self, message: Message):
-        # self.logger.info(f"looking for user_id { message.from_user.id }...")
+        # self.log(f"looking for user_id { message.from_user.id }...")
         active_user = self.cache.find_active_user(user_id=message.chat.id)
         
 
         if active_user:
-            self.logger.info(f"👌 this user is in cache: { active_user }")
+            self.log(f"👌 this user is in cache: { active_user }")
 
             # add some data from telegram
             self.complete_user_profile(active_user, message)
@@ -50,13 +56,13 @@ class Database:
             return active_user
         
         if not active_user:
-            # self.logger.info(f"👐 wow, it's someone new: { active_user }")
+            # self.log(f"👐 wow, it's someone new: { active_user }")
             new_guest = NewGuest(message).create_new_guest()
             
             self.mongoDB.save_user(new_guest)
             
             # cache user after it's being registered
-            self.update_cached_users()
+            self.update_cache_users()
             return new_guest
             
          
@@ -68,7 +74,7 @@ class Database:
         """
         
         self.update_remote_users()
-        self.update_cached_users()
+        self.update_cache_users()
     
             
     def update_remote_users(self):
@@ -78,7 +84,7 @@ class Database:
             is_user_exists_in_db = self.mongoDB.users_collection.find_one(filter=filter_by_id)
             
             if not is_user_exists_in_db:
-                # self.logger.info(f"❌ user doesn't exist, here's id: { initial_user["user_id"] }")
+                # self.log(f"❌ user doesn't exist, here's id: { initial_user["user_id"] }")
 
                 new_user = NewUser().create_new_user(initial_user)
                 # self.complete_user_profile(new_user)
@@ -86,14 +92,14 @@ class Database:
                 self.mongoDB.save_user(new_user)
             
             # if user exists:
-            # self.logger.info(f"✔ user exist: { initial_user["real_name"]}")
+            # self.log(f"✔ user exist: { initial_user["real_name"]}")
 
 
-    def update_cached_users(self):
+    def update_cache_users(self):
         mongo_users = self.mongoDB.get_all_users()
         
-        # self.logger.info(f"mongo_users len: { len(mongo_users) }")
-        # self.logger.info(f"initial_users len: { len(self.initial_users) }")
+        # self.log(f"mongo_users len: { len(mongo_users) }")
+        # self.log(f"initial_users len: { len(self.initial_users) }")
 
         # no Mongo backup
         if not len(mongo_users) or len(mongo_users) == 0:
@@ -111,7 +117,7 @@ class Database:
             self.cache.cache_user(new_user)
             # self.cached_users.append(new_user)
 
-        # self.logger.info(f"🔀 saved initial users to cache: { self.cache.cached_users }")
+        # self.log(f"🔀 saved initial users to cache: { self.cache.cached_users }")
 
 
     def cache_mongo_users(self):
@@ -121,7 +127,7 @@ class Database:
             self.cache.cache_user(mongo_user)
             # self.cached_users.append(mongo_user)
             
-        # self.logger.info(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
+        # self.log(f"🏡 cache filled with MongoDB: { self.cache.cached_users }")
             
             
             
@@ -135,7 +141,7 @@ class Database:
         # add first_name
         if not active_user.get("first_name"):
             self.update_user(user=active_user, key="first_name", new_value=message.from_user.first_name)
-            # self.logger.info(f"first_name updated: { message.from_user.first_name }")
+            # self.log(f"first_name updated: { message.from_user.first_name }")
             
         
         # add username
@@ -147,7 +153,7 @@ class Database:
             else:
                 self.update_user(user=active_user, key="username", new_value=username)
                 
-            # self.logger.info(f"username updated: { message.from_user.username }")
+            # self.log(f"username updated: { message.from_user.username }")
         
         
     
@@ -171,7 +177,7 @@ class Database:
         self.cache.update_user(user_id=user["user_id"], key=key, new_value=new_value)
         
         real_name, last_name = self.get_real_name(user)
-        self.logger.info(f"📅 Пользователь обновлён (update_user): { real_name } { last_name }")
+        self.log(f"📅 Пользователь обновлён (update_user): { real_name } { last_name }")
         
     
     def update_lessons(self, message: Message):
@@ -222,14 +228,29 @@ class Database:
             is_report_allowed = True
 
         # else...        
-        self.logger.info(f"is_report_allowed: { is_report_allowed }")
+        self.log(f"is_report_allowed: { is_report_allowed }")
         return is_report_allowed
         
-    
+    #! Вынести в класс Time
     def week_of_month(self, dt):
         first_day = dt.replace(day=1)
         dom = dt.day
         adjusted_dom = dom + first_day.weekday()  # Weekday ranges from 0 (Monday) to 6 (Sunday)
         return (adjusted_dom - 1) // 7 + 1
+
+    def make_monthly_reset(self):
+        users = self.get_users()
+        # print("🐍  users (monthly_data_refresh): ", users)
+        
+        for user in users:
+            # self.log(f"user: {user}")
+            
+            #? reset lessons
+            if user["access_level"] == "student":
+                self.update_user(user=user, key="done_lessons", new_value=0)
+                self.update_user(user=user, key="lessons_left", new_value=user["max_lessons"])
+                self.update_user(user=user, key="payment_status", new_value=False)
+            
+        self.log(f"Monthly reset completed 🤙")
 
 

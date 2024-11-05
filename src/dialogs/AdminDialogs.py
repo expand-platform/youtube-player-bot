@@ -28,6 +28,40 @@ class AdminDialogs:
             mongodb_method_name="fill",
         )
         
+               
+        #! need to write /replica to test new time features (scheduler)
+        #? /replica
+        self.step_generator.simple_admin_command(
+            command_name="replica",
+            
+            mongodb_method_name="replicate_users",
+            mongodb_activation_position="before_message",
+            
+            bot_after_message=self.messages["replica"]["success"],
+        )
+        
+        #? /load_replica
+        self.step_generator.simple_admin_command(
+            command_name="load_replica",
+            
+            mongodb_method_name="load_replica",
+            mongodb_activation_position="before_message",
+            
+            bot_after_message=self.messages["replica"]["load_success"],
+        )
+        
+        #? /new_month
+        self.step_generator.simple_admin_command(
+            command_name="new_month",
+            
+            mongodb_method_name="monthly_refresh",
+            mongodb_activation_position="after_message",
+            
+            bot_before_message=self.messages["monthly_data_refresh"]["intro"],
+            bot_after_message=self.messages["monthly_data_refresh"]["success"],
+        )
+        
+        
         #? /nv 
         #? new_version (step 1) -> prompt for version number 
         self.step_generator.set_command_with_sequence(
@@ -181,6 +215,7 @@ class AdminDialogs:
             
             bot_before_message=self.messages["su_another_user"],
         )
+        
         
         self.log(f"Команды / диалоги админа установлены 🥂")
         

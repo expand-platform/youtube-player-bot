@@ -6,11 +6,14 @@ from src.users.NewUser import NewUser
 class Cache:
     _cache_instance = None
     
+    users: list = None
+    admin_ids: list = None
+    
     def __new__(cls, *args, **kwargs):
         if cls._cache_instance is None:
             cls._cache_instance = super().__new__(cls)
             
-            cls._cache_instance.cached_users = []
+            cls._cache_instance.users = []
             cls._cache_instance.admin_ids = InitialUsers().get_admin_ids()
         
         return cls._cache_instance
@@ -20,13 +23,13 @@ class Cache:
     
             
     def cache_user(self, new_user: dict) -> None:
-        self.cached_users.append(new_user)
+        self.users.append(new_user)
         
         
     def get_users_from_cache(self) -> list:
-        if len(self.cached_users) > 0:
+        if len(self.users) > 0:
             # self.logger.info(f"🟢 users in cache: { self.cached_users }")
-            return self.cached_users
+            return self.users
         else:
             # self.logger.info(f"❌ no users in cache: { self.cached_users }")
             return []
@@ -39,7 +42,7 @@ class Cache:
     
     def find_active_user(self, user_id):
         # self.logger.info(f"user_id (Cache.find_active_user): { user_id }")
-        for user in self.cached_users:
+        for user in self.users:
             # self.logger.info(f"user: { user }")
             if user["user_id"] == user_id:
                 return user
@@ -48,7 +51,7 @@ class Cache:
     
 
     def update_user(self, user_id: int, key: str, new_value: str | int | bool):
-        for user in self.cached_users:
+        for user in self.users:
             if user["user_id"] == user_id:
                 user[key] = new_value
                 
@@ -56,14 +59,14 @@ class Cache:
                 # self.logger.info(f"user { user_name } updated: key: {key} and value {new_value}")
                 
     def get_user(self, user_id: int) -> dict:
-        for user in self.cached_users:
+        for user in self.users:
             if user["user_id"] == user_id:
                 return user
         
                 
 
     def clean_users(self):
-        self.cached_users = []
+        self.users = []
         self.logger.info(f"Кеш пользователей очищен! 🧹")
         
         initial_users = InitialUsers().get_initial_users()

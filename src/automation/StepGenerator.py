@@ -78,7 +78,7 @@ class StepGenerator:
             if mongodb_activation_position == "after_messages" and mongodb_method_name:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
             
-            self.notify_admin(active_user=active_user, command_name=command_name)
+            self.send_action_notification(active_user=active_user, command_name=command_name)
     
     
     
@@ -86,27 +86,28 @@ class StepGenerator:
     def simple_admin_command(self, 
                         command_name: str = None,
                         
-                        bot_extra_message: str = None,
+                        bot_before_message: str = None,
+                        bot_after_message: str = None,
 
                         mongodb_method_name: str = None,
-                        mongodb_activation_position: str = "after_messages",  # "before_messages", 
+                        mongodb_activation_position: str = "after_message", 
                         ):
         @self.bot._bot.message_handler(commands=[command_name], access_level=["admin"])
         def set_admin_command(message: Message):
             
-            active_user = Database().detect_active_user(message)
-            messages = Language().messages
-            
-            if mongodb_activation_position == "before_messages" and mongodb_method_name:
+            if mongodb_activation_position == "before_message" and mongodb_method_name:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
 
-            if bot_extra_message:
-                self.bot._bot.send_message(chat_id=active_user["user_id"], text=bot_extra_message, parse_mode="Markdown")
+            if bot_before_message:
+                self.bot.tell_admin(message=bot_before_message)
             
-            if mongodb_activation_position == "after_messages" and mongodb_method_name:
+            if mongodb_activation_position == "after_message" and mongodb_method_name:
                 self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
-            
-            # self.notify_admins(message=messages[command_name + bot_message_suffix])
+                
+            if bot_after_message:
+                self.bot.tell_admin(message=bot_after_message)
+                
+                
             
             
     #? ADMIN COMMANDS 
@@ -317,7 +318,7 @@ class StepGenerator:
 
     
     #* HELPERS
-    def notify_admin(self, active_user: dict, command_name):
+    def send_action_notification(self, active_user: dict, command_name):
         # check if user is admin
         if active_user["user_id"] in Database().admin_ids:
             self.log(f"⚠ Admin here, don't sending notification: { active_user["real_name"] }")
@@ -408,9 +409,18 @@ class StepGenerator:
             case "clean":
                 Database().clean_users()
             
-            
             case "fill":
                 Database().sync_cache_and_remote_users()
+                
+            case "replicate_users":
+                MongoDB().replicate_collection(collection_name="users")
+                
+            case "load_replica":
+                MongoDB().load_replica(collection_name="users")
+                Database().update_cache_users()
+                
+            case "monthly_refresh":
+                Database().make_monthly_reset()
                 
                 
             case "update_lessons":
