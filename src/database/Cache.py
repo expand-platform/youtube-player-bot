@@ -63,6 +63,15 @@ class Cache:
             if user["user_id"] == user_id:
                 return user
         
+    
+    def find_user_by_property(self, property_name, value):
+        for user in self.users:
+            if property_name in user:
+                if value == user[property_name]:
+                    print("🐍 user (find_user_by_property): ",user)
+                    return user
+                
+        
                 
 
     def clean_users(self):

@@ -2,7 +2,7 @@ from src.utils.Logger import Logger
 from src.languages.Language import Language
 
 from src.bot.Bot import Bot
-from src.automation.StepGenerator import StepGenerator
+from src.dialogs.DialogGenerator import DialogGenerator
 
 from src.dialogs.AdminDialogs import AdminDialogs
 from src.dialogs.UserDialogs import UserDialogs
@@ -11,7 +11,7 @@ from src.dialogs.UserDialogs import UserDialogs
 class BotDialogs:
     def __init__(self):
         self.log = Logger().info
-        self.step_generator = StepGenerator()
+        self.dialog_generator = DialogGenerator()
    
         
     def enable_dialogs(self):

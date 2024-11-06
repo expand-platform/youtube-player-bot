@@ -147,6 +147,9 @@ class MongoDB:
             existing_documents = self.get_all_versions()
             
         replica_collection = self.replica_db[collection_name]
+        
+        #? clear replica
+        replica_collection.delete_many({})
         replica_collection.insert_many(existing_documents)
         
         self.log(f"Коллекция {collection_name} успешно реплицирована 🐱‍🐉")

@@ -5,6 +5,7 @@ import uvicorn
 from fastapi import FastAPI
 from contextlib import asynccontextmanager
 
+from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
 from src.utils.Time import Time
 from src.database.Database import Database
@@ -17,6 +18,7 @@ class Server:
     def __init__(self):
         self.log = Logger().info
         self.time = Time()
+        self.dotenv = Dotenv()
         
         self.bot = Bot()
         
@@ -46,8 +48,11 @@ class Server:
 
 
     def start_threads(self):
-        self.start_ctrl_c_thread()
-        self.time.set_scheduled_tasks()
+        if self.dotenv == "development":
+            self.start_ctrl_c_thread()
+
+        if self.dotenv == "production":
+            self.time.set_scheduled_tasks()
         
         self.start_bot_thread()
 
@@ -75,11 +80,13 @@ class Server:
         self.bot.disconnect_bot()
         uvicorn.server.Server.should_exit = True
         
-        self.time.scheduler.remove_all_jobs()
-        self.listener_thread.join()
+        if self.dotenv == "development":
+            self.listener_thread.join()
+            
+        if self.dotenv == "production":
+            self.time.scheduler.remove_all_jobs()
           
         self.bot_thread.join()  
-        
         self.log("Сервер выключен ❌")
         
 

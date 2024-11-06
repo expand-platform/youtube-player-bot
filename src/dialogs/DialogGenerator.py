@@ -18,7 +18,7 @@ from src.languages.Language import Language
 
 
 
-class StepGenerator:
+class DialogGenerator:
     def __init__(self):
         self.log = Logger().info
         self.bot = Bot()
@@ -111,7 +111,7 @@ class StepGenerator:
             
             
     #? ADMIN COMMANDS 
-    def set_command_with_sequence(self, 
+    def make_dialog(self, 
                         #? settings
                         access_level = ["student", "admin"],
                         
@@ -171,20 +171,6 @@ class StepGenerator:
                 
                 keyboard: InlineKeyboardMarkup = None
                 
-                #? set keyboard, if needed
-                if keyboard_with_before_message or keyboard_with_after_message:
-                    self.log(f"create keyboard with text: {keyboard_with_before_message or keyboard_with_after_message}")
-                    
-                    keyboard = self.create_inline_keyboard(
-                        keyboard_type=keyboard_with_before_message or keyboard_with_after_message,
-                        callback_user_id = call_data,
-                        
-                        # prefixes
-                        handler_prefix=handler_prefix,
-                        buttons_prefix=buttons_callback_prefix,
-                    ) 
-                
-                
                 #? initial user data
                 active_user = Database().detect_active_user(message)
                 messages = Language().messages
@@ -235,7 +221,22 @@ class StepGenerator:
                         active_user=active_user,
                         data_from_state=state_data
                     )
+                
+                #? set keyboard, if needed
+                if keyboard_with_before_message or keyboard_with_after_message:
+                    self.log(f"create keyboard with text: {keyboard_with_before_message or keyboard_with_after_message}")
                     
+                    keyboard = self.create_inline_keyboard(
+                        keyboard_type=keyboard_with_before_message or keyboard_with_after_message,
+                        callback_user_id = call_data,
+                        
+                        # prefixes
+                        handler_prefix=handler_prefix,
+                        buttons_prefix=buttons_callback_prefix,
+                        
+                        state_data=state_data
+                    )     
+                
                     
                 #? Messages and keyboards
                 if bot_before_message:
@@ -327,7 +328,10 @@ class StepGenerator:
         real_name, last_name = Database().get_real_name(active_user=active_user)
         username = active_user.get("username")
         
-        self.notify_admins(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
+        #! Теперь нужно будет ещё и уведомлять о нажатых кнопках / вводе и т.д
+        #! Пока уведомления идут только о нажатых командах
+        
+        self.bot.tell_admin(message=f"{ real_name } { last_name } @{ username } зашёл в раздел /{command_name} ✅")
         self.log(f"{ real_name } зашёл в раздел /{command_name} ✅")
     
     
@@ -354,11 +358,20 @@ class StepGenerator:
             case "user.payment_amount":
                 return active_user["payment_amount"]
             
+            case "user.payment_status":
+                if active_user["payment_status"]:
+                    return "✅ Ты уже оплатил"
+                
+                else: return "👀 Ты ещё не оплатил"
+            
             case "user.lessons_left":
                 return active_user["lessons_left"]
                 
             case "user.done":
                 return active_user["lessons_left"]
+            
+            case "user.hometask":
+                return active_user["hometask"]
             
             case "latest_version":
                 latest_version = MongoDB().get_latest_versions_info(versions_limit=1)
@@ -468,6 +481,27 @@ class StepGenerator:
                 
                 Database().update_user(user=user_to_change, key=data_from_state["user_property"], new_value=data_from_state["new_value"])
                 
+                
+            case "bulk_update":
+                #? update all users of selected category
+                cache_user = Cache().get_users_from_cache()
+                category = self.extract_button_callback_value(data_from_state["user_category"]) 
+                user_property = self.extract_button_callback_value(data_from_state["user_property"]) 
+                new_value = self.extract_button_callback_value(data_from_state["new_value"]) 
+                
+                print("🐍 category (choose_database_method): ", category)
+                print("🐍 user_property (choose_database_method): ", user_property)
+                print("🐍 new_value (choose_database_method): ", new_value)
+                
+                for user in cache_user:
+                    self.log(f"user: {user}")
+                    
+                    if user["access_level"] == category:
+                        Database().update_user(user=user, key=user_property, new_value=new_value)
+                    
+                self.log(f"Bulk editor: users updated successfully 😎")
+                
+                
             case "show_user":
                 selected_user: UserT = Cache().get_user(user_id=data_from_state["user_id"])
                 print("🐍 selected_user: ", selected_user)
@@ -515,6 +549,9 @@ class StepGenerator:
 
             case "new_value":
                 state.add_data(new_value=data_to_save)
+            
+            case "user.category":
+                state.add_data(user_category=data_to_save)
                 
         
     def get_state_data(self, 
@@ -523,6 +560,8 @@ class StepGenerator:
                        
                        handler_prefix: str = None,
                        ):
+        
+        #! Нужно просто возвращать все данные из state, какими бы они ни были
         
         match requested_data:
             case "new_version":
@@ -562,6 +601,21 @@ class StepGenerator:
                         state_object["new_value"] = self.set_correct_property_type(property_name=user_property_name, value_to_correct=new_value)
                     
                 return state_object
+            
+            case "user.category":
+                #? extract category from state
+                with state.data() as data:
+                    if data["user_category"]:
+                        selected_category = data["user_category"]
+                        print("🐍 selected_category: (create_inline_keyboard)",selected_category)
+                        
+                return {"category": selected_category}
+            
+            case "all":
+                with state.data() as data:
+                    print("🐍 state data (get_state_data): ",data)
+                    
+                    return data
 
 
 
@@ -585,14 +639,15 @@ class StepGenerator:
                                
                                handler_prefix: str = None,
                                buttons_prefix: str = None,
+                               state_data: dict = {},
                             ) -> InlineKeyboardMarkup:
+        
+        keyboard = InlineKeyboardMarkup([], row_width=row_width)
+        cache_users = Cache().get_users_from_cache()
+        
         match keyboard_type:
-            #! Вот тут проблема, всегда для этих кнопок задаётся одинаковый filter_prefix
             case "select_users":
-                cached_users = Cache().get_users_from_cache()
-                keyboard = InlineKeyboardMarkup([], row_width=row_width)
-
-                for user in cached_users:
+                for user in cache_users:
                     # print("🐍user: ", user)
                     real_name, last_name = Database().get_real_name(active_user=user)
                     user_id = user["user_id"] 
@@ -600,10 +655,8 @@ class StepGenerator:
                     button_callback_data = f"{handler_prefix}:{buttons_prefix}:{user_id}"
                     print("🐍button_callback_data: ", button_callback_data)
                     
-                    button = InlineKeyboardButton(text=real_name, callback_data=button_callback_data)
-                    keyboard.add(button)
-                    
-                return keyboard    
+                    category_button = InlineKeyboardButton(text=real_name, callback_data=button_callback_data)
+                    keyboard.add(category_button)
             
             case "select_user_property":
                 callback_user_id = callback_user_id.removeprefix(f"{handler_prefix}:user_id:")
@@ -614,15 +667,55 @@ class StepGenerator:
                 selected_user = Cache().get_user(user_id=callback_user_id)
                 print("🚀 selected_user: ", selected_user)
                 
-                keyboard = InlineKeyboardMarkup([], row_width=row_width)
-                
                 for user_property in selected_user:
                     print("🚀 user_property: ", user_property)
-                    button = InlineKeyboardButton(text=user_property, callback_data=f"{handler_prefix}:user_property:{user_property}")
-                    keyboard.add(button)
-                    
-                return keyboard    
+                    category_button = InlineKeyboardButton(text=user_property, callback_data=f"{handler_prefix}:user_property:{user_property}")
+                    keyboard.add(category_button)
             
+            case "hometask_actions":
+                for key, value in self.messages["hometask"]["buttons"].items():
+                    self.log(f"key: {key}")
+                    self.log(f"key: {value}") 
+                    
+                    self.log(f"button callback data: {handler_prefix}:{buttons_prefix}:{key}")
+                    
+                    hometask_button = InlineKeyboardButton(text=value, callback_data=f"{handler_prefix}:{buttons_prefix}:{key}")
+                    keyboard.add(hometask_button)
+                    
+            case "users.access_level":
+                user_categories = set()
+                
+                for user in cache_users:
+                    user_categories.add(user["access_level"])
+                    
+                self.log(f"🐍 unique user_categories (create_inline_keyboard):  {user_categories}")
+                
+                for category in user_categories:
+                    # self.log(f"unique category: {category}")
+                    
+                    self.log(f"button callback data: {handler_prefix}:{buttons_prefix}:{category}")
+                    
+                    category_button = InlineKeyboardButton(text=category, callback_data=f"{handler_prefix}:{buttons_prefix}:{category}")
+                    keyboard.add(category_button)
+                
+            #! Написать метод extract_state_data()
+            case "users.access_level.properties":
+                selected_category = self.extract_button_callback_value(state_data["category"])
+                print("🐍 selected_category (create_inline_keyboard): ", selected_category)
+                        
+                user_within_category = Cache().find_user_by_property(property_name="access_level", value=selected_category)
+                        
+           
+                for user_property, value in user_within_category.items():
+                    # print("🚀 property: ", key)
+                    
+                    category_button = InlineKeyboardButton(text=user_property, callback_data=f"{handler_prefix}:{buttons_prefix}:{user_property}")
+                    keyboard.add(category_button)
+                            
+                
+                    
+        return keyboard
+                  
     
     def set_correct_property_type(self, property_name: str = None, value_to_correct: Union[str, int] = None):
             if property_name in ["max_lessons", "done_lessons", "lessons_left", "payment_amount"]:
@@ -631,6 +724,21 @@ class StepGenerator:
             if property_name in ["real_name", "last_name", "first_name", "username"]:
                 return str(value_to_correct)
             
+            if property_name in ["payment_status"]:
+                if value_to_correct == "True" or value_to_correct == "true" or value_to_correct == "t" or value_to_correct == "1":
+                    return True
+                
+                if value_to_correct == "False" or value_to_correct == "false" or value_to_correct == "f" or value_to_correct == "0":
+                    return False
+            
+            
+    def extract_button_callback_value(self, callback_text):
+        words_array = callback_text.split(":")
+        length = len(words_array)
+        
+        self.log(f"true button value: { words_array[length - 1] }")
+        
+        return words_array[length - 1].strip()
             
 
     

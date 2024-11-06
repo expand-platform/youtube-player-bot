@@ -1,5 +1,22 @@
 from telebot.states import State, StatesGroup
 
+#! User states
+
+class HometaskStates(StatesGroup):
+    pass
+    # version_number_prompt = State()
+    # version_message_prompt = State()
+    
+    # stages = [
+    #     version_number_prompt,
+    #     version_message_prompt,
+    # ] 
+
+
+
+
+#! Admin states
+
 #? /nv: new version
 class VersionSequenceStates(StatesGroup):
     version_number_prompt = State()
@@ -29,6 +46,18 @@ class SeeUserSequenceStates(StatesGroup):
     
     stages = [
         su_select_user
+    ]
+
+#? /be: bulk editor 
+class BulkEditorStates(StatesGroup):
+    be_select_user_type = State()
+    be_select_user_property = State()
+    be_enter_new_value = State()
+    
+    stages = [
+        be_select_user_type,
+        be_select_user_property,
+        be_enter_new_value
     ]
         
         

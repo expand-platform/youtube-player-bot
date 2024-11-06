@@ -51,7 +51,6 @@ class Bot:
             self._bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20, restart_on_change=True)
 
         self._bot.infinity_polling(timeout=5, skip_pending=True, long_polling_timeout=20)
-        
 
 
     def get_bot_data(self, bot: TeleBot, requested_data: str) -> str:

@@ -126,7 +126,7 @@ class Database:
         
         #! Костыль detected
         #! skip first user from db: admin
-        for mongo_user in mongo_users[1:]:
+        for mongo_user in mongo_users:
             self.cache.cache_user(mongo_user)
             # self.cached_users.append(mongo_user)
             

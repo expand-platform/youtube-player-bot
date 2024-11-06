@@ -1,7 +1,7 @@
 from src.utils.Logger import Logger
 from src.languages.Language import Language
 
-from src.automation.StepGenerator import StepGenerator
+from src.dialogs.DialogGenerator import DialogGenerator
 from src.bot.Bot import Bot
 
 
@@ -11,14 +11,14 @@ class UserDialogs:
         
         self.bot = Bot()
         
-        self.step_generator = StepGenerator()
+        self.dialog_generator = DialogGenerator()
         self.messages = Language().messages
         
         
     def set_user_dialogs(self):
         #* Guests
         #? /start
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="start",
             access_level=["guest"],
             
@@ -31,7 +31,7 @@ class UserDialogs:
         
         #* Students 
         #? /start 
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="start",
             access_level=["student", "admin"], 
             
@@ -44,7 +44,7 @@ class UserDialogs:
         )
         
         #? /schedule 
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="schedule",
             access_level=["student", "admin"], 
             
@@ -52,7 +52,7 @@ class UserDialogs:
         )
         
         #? /zoom
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="zoom",
             access_level=["student", "admin"], 
             
@@ -60,7 +60,7 @@ class UserDialogs:
         )
        
         #? /plan
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="plan",
             access_level=["student", "admin"], 
             
@@ -68,18 +68,25 @@ class UserDialogs:
         )
         
         #? /payment 
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="payment",
             access_level=["student"], 
             
-            formatted_messages=[self.messages["payment_amount"]],
-            formatted_variables=["user.payment_amount"],
-
-            bot_after_multiple_messages=self.messages["payment_details"]
+            formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["status"]],
+            formatted_variables=["user.payment_amount", "user.payment_status"],
+        )
+        
+        
+        #? /card 
+        self.dialog_generator.set_command(
+            command_name="card",
+            access_level=["student", "admin"], 
+            
+            bot_before_multiple_messages=self.messages["payment"]["details"],
         )
         
         #? /lessons
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="lessons",
             access_level=["student"], 
             
@@ -88,7 +95,7 @@ class UserDialogs:
         )
         
         #? /done
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="done",
             access_level=["student"], 
             
@@ -97,7 +104,7 @@ class UserDialogs:
         )
         
         #? /version
-        self.step_generator.set_command(
+        self.dialog_generator.set_command(
             command_name="version",
             access_level=["student", "admin"], 
             
@@ -107,8 +114,27 @@ class UserDialogs:
             mongodb_method_name="get_latest_versions_info",
         )
         
+        #! Sequences
+        
+        #? /hometask (step 1) -> show home task and buttons (edit / remind me)  
+        self.dialog_generator.make_dialog(
+            access_level=["student"],
+            handler_type="command",
+            command_name="hometask",
+            
+            handler_prefix="ht",
+            buttons_callback_prefix="hometask_actions",
+            
+            active_state=None,
+            next_state=None,
+            
+            formatted_messages=[self.messages["hometask"]["task"]],
+            formatted_variables=["user.hometask"],
+            
+            keyboard_with_before_message="hometask_actions",
+        )
+        
         self.log(f"Команды и диалоги пользователей включены 🎬")
         
-        #? делаем /new_month
         
         

@@ -3,7 +3,7 @@ from datetime import datetime
 
 from src.users.types import UserT
 
-#? Думаю, здесь можно создать один класс, правда в нём будет много проверок...
+from src.languages.Language import Language
 
 class NewInitialGuest:
     """ base class for adding new users to DB """
@@ -101,6 +101,8 @@ class NewStudent():
             "max_lessons": self.max_lessons,
             "done_lessons": 0,
             "lessons_left": self.max_lessons,
+
+            "hometask": Language().messages["hometask"]["empty"],
 
             "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             
