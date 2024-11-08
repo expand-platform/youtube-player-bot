@@ -95,4 +95,11 @@ INITIAL_USERS = [
         "max_lessons": 8,
         "access_level": "student",
     },
+    {
+        "real_name": "Ангелина",
+        "last_name": "Гадзюк",
+        "payment_amount": 4000,
+        "max_lessons": 4,
+        "access_level": "student",
+    },
 ]
