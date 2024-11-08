@@ -97,7 +97,7 @@ INITIAL_USERS = [
     },
     {
         "real_name": "Ангелина",
-        "last_name": "Гадзюк",
+        "last_name": "Гаджук",
         "payment_amount": 4000,
         "max_lessons": 4,
         "access_level": "student",
