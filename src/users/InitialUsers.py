@@ -1,6 +1,6 @@
 from src.utils.Dotenv import Dotenv
 from src.utils.Logger import Logger
-from users.initial_users_list import INITIAL_USERS
+from src.users.initial_users_list import INITIAL_USERS
 
 
 class InitialUsers:
