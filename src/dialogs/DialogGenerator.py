@@ -360,9 +360,9 @@ class DialogGenerator:
             
             case "user.payment_status":
                 if active_user["payment_status"]:
-                    return "✅ Ты уже оплатил"
+                    return "✅ Ты уже оплатил(а)"
                 
-                else: return "👀 Ты ещё не оплатил"
+                else: return "👀 Ты ещё не оплатил(а)"
             
             case "user.lessons_left":
                 return active_user["lessons_left"]
