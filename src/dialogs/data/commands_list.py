@@ -16,6 +16,7 @@ STUDENT_SLASH_COMMANDS = [
     
     BotCommand("plan", commands["plan"]),
     # BotCommand("hometask", commands["hometask"]),
+    BotCommand("codewars", commands["codewars"]),
  
     BotCommand("payment", commands["payment"]),
     BotCommand("card", commands["card"]),

@@ -67,6 +67,14 @@ class UserDialogs:
             bot_after_message=self.messages["plan"]
         )
         
+        #? /plan
+        self.dialog_generator.set_command(
+            command_name="codewars",
+            access_level=["guest", "student", "admin"], 
+            
+            bot_after_message=self.messages["codewars"]["link"]
+        )
+        
         #? /payment 
         self.dialog_generator.set_command(
             command_name="payment",
