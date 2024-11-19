@@ -8,8 +8,10 @@ BOT_COMMANDS_RU = {
     
     "schedule": "Когда мой урок?",
     "zoom": "Ссылка на Zoom",
+    
     "plan": "План-карта",
     "codewars": "Случайна задача из Codewars",
+    "projects": "Выбиралка проектов",
     
     "payment": "Оплата",
     "card": "Реквизиты и номер карты",
@@ -46,7 +48,8 @@ BOT_MESSAGES_RU = {
 /zoom  Ссылка для Zoom
 
 /plan  План-карта
-/codewars Случайная задачка с Codewars
+/projects Выбрать задачу или проект
+/codewars Случайная задачка из Codewars
 
 /payment Оплата
 /card Реквизиты
@@ -133,6 +136,14 @@ https://www.expandplatform.com/students/projects/
 
 """,  
 ],
+
+#? choose project
+"project_picker": {
+"link": """
+Выбери задачу или проект себе по душе:
+https://www.expandplatform.com/students/projects/picker/
+"""
+},
 
 #? codewars bot
 "codewars": {
