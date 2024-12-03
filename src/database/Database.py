@@ -242,11 +242,8 @@ class Database:
 
     def make_monthly_reset(self):
         users = self.get_users()
-        # print("🐍  users (monthly_data_refresh): ", users)
         
         for user in users:
-            # self.log(f"user: {user}")
-            
             #? reset lessons
             if user["access_level"] == "student":
                 self.update_user(user=user, key="done_lessons", new_value=0)

@@ -47,9 +47,6 @@ class MongoDB:
         self.users_collection: Collection = self.database['users']
         self.versions_collection: Collection = self.database['versions']
         
-        #? replica's collections
-        self.replica_users: Collection = self.replica_db["users"]
-
         
     def show_users(self):        
         self.log(f"Коллекция юзеров: {list(self.users_collection.find({}))}")
@@ -141,6 +138,7 @@ class MongoDB:
         
     
     def replicate_collection(self, collection_name: str = "users"):
+        """ replicates users or versions collection """
         existing_documents = self.get_all_users()
         
         if collection_name == "versions":

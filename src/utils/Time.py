@@ -52,6 +52,9 @@ class Time:
         
     def make_monthly_data_refresh(self):
         self.bot.tell_admin(message=self.messages["monthly_data_refresh"]["intro"])
+        
+        # updates user under the hood
+        # ? no need to do "sync-cache-remote"
         Database().make_monthly_reset()
             
         self.log(f"Monthly reset completed 🤙")
@@ -59,8 +62,13 @@ class Time:
             
         
     def make_weekly_backup(self):
+        self.bot.tell_admin(message=self.messages["weekly_replica"]["intro"])
+        
+        # replicate all collections
         MongoDB().replicate_collection(collection_name="users")
-        Database().sync_cache_and_remote_users()
+        MongoDB().replicate_collection(collection_name="versions")
+        
+        self.bot.tell_admin(message=self.messages["weekly_replica"]["success"])
         
         
         

@@ -6,6 +6,37 @@ from src.dialogs.DialogGenerator import DialogGenerator
 
 from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates
 
+""" 
+    ? Admin commands: 
+    
+    #! Manual DB / users manipulation
+    ? /clean - clean users in DB / cache
+    ? /fill - fill users in DB / cache
+    
+    
+    #! Backups
+    ? /replica - replicates collections
+    ? /load_replica - load given replicated collection
+    
+    
+    #! Scheduled jobs: manual backups
+    ? /new_month - monthly reset
+    
+    
+    #! versions
+    ? /nv - publish new version 
+    
+    
+    #! Users: manual updates
+    ? /su - see user 
+    ? /uu - update user 
+    ? /be - bulk edit user groups 
+    
+
+
+"""
+
+
 class AdminDialogs:
     def __init__(self):
         self.log = Logger().info
@@ -28,8 +59,6 @@ class AdminDialogs:
             mongodb_method_name="fill",
         )
         
-               
-        #! need to write /replica to test new time features (scheduler)
         #? /replica
         self.dialog_generator.simple_admin_command(
             command_name="replica",
@@ -72,9 +101,6 @@ class AdminDialogs:
             active_state=None,
             next_state=VersionSequenceStates.stages[0],
             
-            # mongodb_method_name="show_latest_version",
-            # mongodb_activation_position="after_messages",
-            
             formatted_messages=[self.messages["prompt_new_version_number"], self.messages["latest_version"]],
             formatted_variables=["user.real_name", "latest_version"],
         )
@@ -110,9 +136,8 @@ class AdminDialogs:
         )
         
         
-        
         #? /uu  
-        #? /uu (step 1) -> user selection
+        #? /uu (step 1) -> update user
         self.dialog_generator.make_dialog(
             access_level=["admin"],
             handler_type="command",

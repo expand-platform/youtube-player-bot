@@ -48,10 +48,10 @@ class Server:
 
 
     def start_threads(self):
-        if self.dotenv == "development":
+        if self.dotenv.environment == "development":
             self.start_ctrl_c_thread()
 
-        if self.dotenv == "production":
+        if self.dotenv.environment == "production":
             self.time.set_scheduled_tasks()
         
         self.start_bot_thread()
@@ -80,10 +80,10 @@ class Server:
         self.bot.disconnect_bot()
         uvicorn.server.Server.should_exit = True
         
-        if self.dotenv == "development":
+        if self.dotenv.environment == "development":
             self.listener_thread.join()
             
-        if self.dotenv == "production":
+        if self.dotenv.environment == "production":
             self.time.scheduler.remove_all_jobs()
           
         self.bot_thread.join()  
