@@ -50,31 +50,7 @@ class UserDialogs:
             
             bot_before_multiple_messages=self.messages["schedule"],
         )
-        
        
-        #? /plan
-        # self.dialog_generator.set_command(
-        #     command_name="plan",
-        #     access_level=["student", "admin"], 
-            
-        #     bot_after_message=self.messages["plan"]
-        # )
-        
-        # #? /plan
-        # self.dialog_generator.set_command(
-        #     command_name="codewars",
-        #     access_level=["guest", "student", "admin"], 
-            
-        #     bot_after_message=self.messages["codewars"]["link"]
-        # )
-        
-        #? /projects
-        # self.dialog_generator.set_command(
-        #     command_name="projects",
-        #     access_level=["student", "admin"], 
-            
-        #     bot_after_message=self.messages["project_picker"]["link"]
-        # )
         
         #? /payment 
         self.dialog_generator.set_command(
@@ -87,14 +63,6 @@ class UserDialogs:
             bot_after_multiple_messages=self.messages["payment"]["details"]
         )
         
-        
-        #? /card 
-        # self.dialog_generator.set_command(
-        #     command_name="card",
-        #     access_level=["student", "admin"], 
-            
-        #     bot_before_multiple_messages=self.messages["payment"]["details"],
-        # )
         
         #? /lessons
         self.dialog_generator.set_command(
