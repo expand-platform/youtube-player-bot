@@ -51,37 +51,30 @@ class UserDialogs:
             bot_before_multiple_messages=self.messages["schedule"],
         )
         
-        #? /zoom
-        self.dialog_generator.set_command(
-            command_name="zoom",
-            access_level=["student", "admin"], 
-            
-            bot_after_message=self.messages["zoom"]
-        )
        
         #? /plan
-        self.dialog_generator.set_command(
-            command_name="plan",
-            access_level=["student", "admin"], 
+        # self.dialog_generator.set_command(
+        #     command_name="plan",
+        #     access_level=["student", "admin"], 
             
-            bot_after_message=self.messages["plan"]
-        )
+        #     bot_after_message=self.messages["plan"]
+        # )
         
-        #? /plan
-        self.dialog_generator.set_command(
-            command_name="codewars",
-            access_level=["guest", "student", "admin"], 
+        # #? /plan
+        # self.dialog_generator.set_command(
+        #     command_name="codewars",
+        #     access_level=["guest", "student", "admin"], 
             
-            bot_after_message=self.messages["codewars"]["link"]
-        )
+        #     bot_after_message=self.messages["codewars"]["link"]
+        # )
         
         #? /projects
-        self.dialog_generator.set_command(
-            command_name="projects",
-            access_level=["student", "admin"], 
+        # self.dialog_generator.set_command(
+        #     command_name="projects",
+        #     access_level=["student", "admin"], 
             
-            bot_after_message=self.messages["project_picker"]["link"]
-        )
+        #     bot_after_message=self.messages["project_picker"]["link"]
+        # )
         
         #? /payment 
         self.dialog_generator.set_command(
@@ -90,16 +83,18 @@ class UserDialogs:
             
             formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["status"]],
             formatted_variables=["user.payment_amount", "user.payment_status"],
+
+            bot_after_multiple_messages=self.messages["payment"]["details"]
         )
         
         
         #? /card 
-        self.dialog_generator.set_command(
-            command_name="card",
-            access_level=["student", "admin"], 
+        # self.dialog_generator.set_command(
+        #     command_name="card",
+        #     access_level=["student", "admin"], 
             
-            bot_before_multiple_messages=self.messages["payment"]["details"],
-        )
+        #     bot_before_multiple_messages=self.messages["payment"]["details"],
+        # )
         
         #? /lessons
         self.dialog_generator.set_command(

@@ -8,11 +8,11 @@ watchdog = "*"
 python-dotenv = "*"
 pytelegrambotapi = "*"
 psutil = "*"
-uvicorn = "*"
 fastapi = "*"
 pymongo = "*"
 apscheduler = "*"
 keyboard = "*"
+uvicorn = "*"
 
 [dev-packages]
 

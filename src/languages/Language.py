@@ -1,4 +1,4 @@
-from src.languages.Ru import BOT_COMMANDS_RU, BOT_MESSAGES_RU
+from src.languages.Ru import MENU_COMMANDS_RU, BOT_MESSAGES_RU
  
 
 class Language:
@@ -10,7 +10,7 @@ class Language:
         
     def set_active_language_to(self, new_language="ru"):
         if new_language == "ru":
-            self.commands = BOT_COMMANDS_RU
+            self.commands = MENU_COMMANDS_RU
             self.messages = BOT_MESSAGES_RU
 
     
