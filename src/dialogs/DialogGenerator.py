@@ -23,7 +23,7 @@ class DialogGenerator:
         self.log = Logger().info
         self.bot = Bot()
         self.messages = Language().messages
-    
+
 
     #* generate any /slash commands 
     def set_command(self,
@@ -41,8 +41,8 @@ class DialogGenerator:
                 formatted_messages: str = None, 
                 formatted_variables: str = None,
                 
-                mongodb_method_name: str = None,
-                mongodb_activation_position: str = None,  # "before_messages", "after_messages"
+                database_method_name: str = None,
+                database_activation_position: str = None,  # "before_messages", "after_messages"
                 ):
 
         
@@ -54,8 +54,8 @@ class DialogGenerator:
                 self.set_slash_commands(active_user)
             
             #? MongoDB (before messages)
-            if mongodb_activation_position == "before_messages" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
+            if database_activation_position == "before_messages" and database_method_name:
+                self.choose_database_method(database_method_name=database_method_name, message=message, active_user=active_user)
                 
             #? Messages (before)
             if bot_before_message:
@@ -75,8 +75,8 @@ class DialogGenerator:
             if bot_after_multiple_messages:
                 self.bot.send_multiple_messages(chat_id=active_user["user_id"], messages=bot_after_multiple_messages)
                 
-            if mongodb_activation_position == "after_messages" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message, active_user=active_user)
+            if database_activation_position == "after_messages" and database_method_name:
+                self.choose_database_method(database_method_name=database_method_name, message=message, active_user=active_user)
             
             self.send_action_notification(active_user=active_user, command_name=command_name)
     
@@ -89,20 +89,20 @@ class DialogGenerator:
                         bot_before_message: str = None,
                         bot_after_message: str = None,
 
-                        mongodb_method_name: str = None,
-                        mongodb_activation_position: str = "after_message", 
+                        database_method_name: str = None,
+                        database_activation_position: str = "after_message", 
                         ):
         @self.bot._bot.message_handler(commands=[command_name], access_level=["admin"])
         def set_admin_command(message: Message):
             
-            if mongodb_activation_position == "before_message" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+            if database_activation_position == "before_message" and database_method_name:
+                self.choose_database_method(database_method_name=database_method_name, message=message)
 
             if bot_before_message:
                 self.bot.tell_admin(message=bot_before_message)
             
-            if mongodb_activation_position == "after_message" and mongodb_method_name:
-                self.choose_database_method(mongodb_method_name=mongodb_method_name, message=message)
+            if database_activation_position == "after_message" and database_method_name:
+                self.choose_database_method(database_method_name=database_method_name, message=message)
                 
             if bot_after_message:
                 self.bot.tell_admin(message=bot_after_message)
@@ -142,11 +142,10 @@ class DialogGenerator:
                         keyboard_with_after_message: str = None,
                         
                         #? mongo
-                        mongodb_activation_position: str = "after_messages",
-                        mongodb_method_name: str = None,
-                        
-                        
+                        database_activation_position: str = "after_messages",
+                        database_method_name: str = None,
                         ):
+        
         def set_custom_command(
             message: Union[Message, CallbackQuery], 
             state: StateContext
@@ -214,9 +213,9 @@ class DialogGenerator:
                     
 
                 #? DB action (before messages)                
-                if mongodb_activation_position == "before_messages" and mongodb_method_name:
+                if database_activation_position == "before_messages" and database_method_name:
                     self.choose_database_method(
-                        mongodb_method_name=mongodb_method_name, 
+                        database_method_name=database_method_name, 
                         message=message, 
                         active_user=active_user,
                         data_from_state=state_data
@@ -268,9 +267,9 @@ class DialogGenerator:
                     
 
                 #? MongoDB (end)
-                if mongodb_activation_position == "after_messages" and mongodb_method_name:
+                if database_activation_position == "after_messages" and database_method_name:
                     self.choose_database_method(
-                        mongodb_method_name=mongodb_method_name, 
+                        database_method_name=database_method_name, 
                         message=message or call.message, 
                         data_from_state=state_data
                     )
@@ -378,6 +377,40 @@ class DialogGenerator:
                 print("🐍latest_version (get_format_variable, from MongoDB)", latest_version[0]["version"])
                 return latest_version[0]["version"]
             
+            case "students.count":
+                count = 0
+                users = Database().get_users()
+                
+                for user in users:
+                    print(f"user: {user}")
+                    if user["access_level"] == "student":
+                        count += 1
+
+                return count
+
+            case "students.amount":
+                total_sum = 0
+                users = Database().get_users()
+                
+                for user in users:
+                    print(f"user: {user}")
+                    if user["access_level"] == "student":
+                        total_sum += user["payment_amount"]
+                        
+                return total_sum
+            
+            case "students.average":
+                total_sum = 0
+                count = 0
+                users = Database().get_users()
+                
+                for user in users:
+                    print(f"user: {user}")
+                    if user["access_level"] == "student":
+                        count += 1
+                        total_sum += user["payment_amount"]
+
+                return round(total_sum / count)
             
             #! Добавить поддержку для кастомных юзеров, а не только для текущего
             # case "selected_user.real_name":
@@ -411,14 +444,14 @@ class DialogGenerator:
         
     
     def choose_database_method(self, 
-                            mongodb_method_name: str, 
+                            database_method_name: str, 
                             message: Message, 
                             
                             active_user=None, 
                             
                             data_from_state=None
                             ):
-        match mongodb_method_name:
+        match database_method_name:
             case "clean":
                 Database().clean_users()
             
@@ -522,6 +555,8 @@ class DialogGenerator:
                     
                 self.bot._bot.send_message(chat_id=active_user["chat_id"], text=user_info, parse_mode="Markdown")
                     
+            case "remove_user": 
+                Database().remove_user(data_from_state["user_id"])
                 
                 
                 

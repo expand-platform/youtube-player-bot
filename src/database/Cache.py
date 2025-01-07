@@ -62,6 +62,14 @@ class Cache:
         for user in self.users:
             if user["user_id"] == user_id:
                 return user
+            
+            
+    def remove_user(self, user_id: int) -> None:
+        for cache_user in self.users:
+            if user_id == cache_user["user_id"]:
+                self.users.remove(cache_user)
+                print(f"User removed from cache!")
+                
         
     
     def find_user_by_property(self, property_name, value):

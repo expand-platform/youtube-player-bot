@@ -64,8 +64,14 @@ class Database:
             # cache user after it's being registered
             self.update_cache_users()
             return new_guest
-            
+
+
+    def remove_user(self, user_id: int = None) -> None:
+        self.mongoDB.remove_user(user_id)
+        self.cache.remove_user(user_id)
+        print(f"User fully removed from Database!")
          
+
     def sync_cache_and_remote_users(self):
         """ Sync users across sources: 
             1) initial users with mongoDB

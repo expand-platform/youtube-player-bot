@@ -85,7 +85,11 @@ class MongoDB:
         # self.log(f"before: { new_user }  ⏳ ")
         
         self.log(f"Юзер с id { new_user["user_id"] } сохранён в БД ⏳ ")
-        
+
+    def remove_user(self, user_id: int) -> None:
+        filter = {"user_id": user_id}
+        self.users_collection.delete_one(filter=filter)
+        print(f"User removed from MongoDB!")
 
         
     def update_user(self, user_id: int, key: str, new_value: str | int | bool):

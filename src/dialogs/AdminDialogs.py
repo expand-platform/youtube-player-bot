@@ -4,7 +4,7 @@ from src.languages.Language import Language
 from src.bot.Bot import Bot
 from src.dialogs.DialogGenerator import DialogGenerator
 
-from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates
+from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates, RemoveUserStates
 
 """ 
     ? Admin commands: 
@@ -32,7 +32,7 @@ from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeU
     ? /uu - update user 
     ? /be - bulk edit user groups 
     
-
+    #! /income: how much money earned in this month
 
 """
 
@@ -50,21 +50,22 @@ class AdminDialogs:
         #? /clean
         self.dialog_generator.simple_admin_command(
             command_name="clean",
-            mongodb_method_name="clean",
+            database_method_name="clean",
         )
 
         #? /fill
         self.dialog_generator.simple_admin_command(
             command_name="fill",
-            mongodb_method_name="fill",
+            database_method_name="fill",
         )
+
         
         #? /replica
         self.dialog_generator.simple_admin_command(
             command_name="replica",
             
-            mongodb_method_name="replicate_users",
-            mongodb_activation_position="before_message",
+            database_method_name="replicate_users",
+            database_activation_position="before_message",
             
             bot_after_message=self.messages["replica"]["success"],
         )
@@ -73,8 +74,8 @@ class AdminDialogs:
         self.dialog_generator.simple_admin_command(
             command_name="load_replica",
             
-            mongodb_method_name="load_replica",
-            mongodb_activation_position="before_message",
+            database_method_name="load_replica",
+            database_activation_position="before_message",
             
             bot_after_message=self.messages["replica"]["load_success"],
         )
@@ -83,11 +84,24 @@ class AdminDialogs:
         self.dialog_generator.simple_admin_command(
             command_name="new_month",
             
-            mongodb_method_name="monthly_refresh",
-            mongodb_activation_position="after_message",
+            database_method_name="monthly_refresh",
+            database_activation_position="after_message",
             
             bot_before_message=self.messages["monthly_data_refresh"]["intro"],
             bot_after_message=self.messages["monthly_data_refresh"]["success"],
+        )
+
+        #? /income: how much earned in this month
+        self.dialog_generator.make_dialog(
+            access_level=["admin"],
+            handler_type="command",
+            command_name="income",
+
+            active_state=None,
+            next_state=None,
+
+            formatted_messages=[self.messages["income"]["count"], self.messages["income"]["amount"], self.messages["income"]["average"]],
+            formatted_variables=["students.count", "students.amount", "students.average"],
         )
         
         
@@ -129,8 +143,8 @@ class AdminDialogs:
             use_state_data=True,
             requested_state_data="new_version",
             
-            mongodb_activation_position="after_messages",
-            mongodb_method_name="update_version",
+            database_method_name="update_version",
+            database_activation_position="after_messages",
             
             bot_after_message=self.messages["new_version_success"]
         )
@@ -196,8 +210,8 @@ class AdminDialogs:
             use_state_data=True,
             requested_state_data="selected_user",
             
-            mongodb_activation_position="before_messages",
-            mongodb_method_name="update_user",
+            database_activation_position="before_messages",
+            database_method_name="update_user",
             
             bot_after_message=self.messages["update_user_success"]
         )
@@ -235,8 +249,8 @@ class AdminDialogs:
             use_state_data=True,
             requested_state_data="selected_user",
             
-            mongodb_method_name="show_user",
-            mongodb_activation_position="before_messages",
+            database_method_name="show_user",
+            database_activation_position="before_messages",
             
             bot_before_message=self.messages["su_another_user"],
         )
@@ -304,10 +318,50 @@ class AdminDialogs:
             use_state_data=True,
             requested_state_data="all",
             
-            mongodb_activation_position="before_messages",
-            mongodb_method_name="bulk_update",
+            database_activation_position="before_messages",
+            database_method_name="bulk_update",
             
             bot_after_message=self.messages["bulk_editor"]["success"],
+        )
+
+        #! /ru remove user
+
+        #? /ru (1): prompt for user_id
+        self.dialog_generator.make_dialog(
+            handler_type="command",
+            command_name="ru",
+            access_level=["admin"],
+            
+            active_state=None,
+            next_state=RemoveUserStates.stages[0],
+            
+            bot_before_message=self.messages["remove_user"]["select_user"],
+            
+            handler_prefix="ru",
+            buttons_callback_prefix="user_id",
+
+            keyboard_with_before_message="select_users"
+        )
+
+        #? /ru (2) -> final: success message 
+        self.dialog_generator.make_dialog(
+            access_level=["admin"],
+            handler_type="keyboard",
+                        
+            handler_prefix="ru",
+            handler_property="user_id",
+            
+            active_state=RemoveUserStates.stages[0],
+            next_state=None,
+            state_variable="user_id",
+            
+            use_state_data=True,
+            requested_state_data="selected_user",
+            
+            database_method_name="remove_user",
+            database_activation_position="before_messages",
+            
+            bot_before_message=self.messages["remove_user"]["success"],
         )
         
         

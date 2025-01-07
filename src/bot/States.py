@@ -60,4 +60,13 @@ class BulkEditorStates(StatesGroup):
         be_enter_new_value
     ]
         
+
+#? /ru: remove user 
+class RemoveUserStates(StatesGroup):
+    select_user = State()
+    
+    stages = [
+        select_user,
+    ]
+        
         

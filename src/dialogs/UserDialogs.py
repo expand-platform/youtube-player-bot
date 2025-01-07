@@ -78,8 +78,8 @@ class UserDialogs:
             command_name="done",
             access_level=["student"], 
             
-            mongodb_method_name="update_lessons",
-            mongodb_activation_position="after_messages",
+            database_method_name="update_lessons",
+            database_activation_position="after_messages",
         )
         
         #? /version
@@ -89,8 +89,8 @@ class UserDialogs:
             
             bot_after_message=self.messages["version_intro"],
             
-            mongodb_activation_position="after_messages",
-            mongodb_method_name="get_latest_versions_info",
+            database_activation_position="after_messages",
+            database_method_name="get_latest_versions_info",
         )
         
         #! Sequences
