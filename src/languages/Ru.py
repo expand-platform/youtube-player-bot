@@ -128,7 +128,7 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
 #? income
 "income": {
     "count": "Студентов: *{}*",
-    "amount": "Полный доход : *{} грн*",
+    "amount": "Возможный доход : *{} грн*",
     "average": "Средний доход со студента: *{} грн*",
 },
 

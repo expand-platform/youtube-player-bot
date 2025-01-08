@@ -397,7 +397,8 @@ class DialogGenerator:
                     if user["access_level"] == "student":
                         total_sum += user["payment_amount"]
                         
-                return total_sum
+                #? range 80%-100%
+                return f"{round(total_sum * 0.8)} - {round(total_sum)}"
             
             case "students.average":
                 total_sum = 0
