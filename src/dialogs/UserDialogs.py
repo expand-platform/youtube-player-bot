@@ -50,6 +50,14 @@ class UserDialogs:
             
             bot_before_multiple_messages=self.messages["schedule"],
         )
+        
+        #? /card 
+        self.dialog_generator.set_command(
+            command_name="card",
+            access_level=["student", "admin"], 
+            
+            bot_before_multiple_messages=self.messages["payment"]["details"],
+        )
        
         
         #? /payment 
@@ -57,10 +65,10 @@ class UserDialogs:
             command_name="payment",
             access_level=["student"], 
             
-            formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["status"]],
-            formatted_variables=["user.payment_amount", "user.payment_status"],
+            formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["amount_uah"], self.messages["payment"]["status"]],
+            formatted_variables=["user.payment_amount", "user.amount_uah", "user.payment_status"],
 
-            bot_after_multiple_messages=self.messages["payment"]["details"]
+            bot_after_message=self.messages["payment"]["see_cards"]
         )
         
         

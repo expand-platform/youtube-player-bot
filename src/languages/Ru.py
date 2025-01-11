@@ -74,10 +74,12 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
 
 #? /payment
 "payment": {
-"amount": "Цена в этом месяце: *{} грн*",
+"amount": "Цена в этом месяце: _${}_",
+"amount_uah": "В гривнах это: _{} грн_",
 "status": """
-*{}* уроки в этом месяце
+{} уроки в этом месяце
 """,
+"see_cards": "Показать реквизиты: /card",
 #? array for sending card numbers separately (it's handy)
 "details": [
 "Приватбанк, Лукьяненко О.",

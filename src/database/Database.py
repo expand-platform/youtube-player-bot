@@ -42,7 +42,7 @@ class Database:
     #! reduce number of times this method has been called
     #! for super fast time-to-response
     #! Now it's called 3 times: Filters, / command and maybe somewhere else (use search for set_active_user)
-    def detect_active_user(self, message: Message):
+    def get_active_user(self, message: Message):
         # self.log(f"looking for user_id { message.from_user.id }...")
         active_user = self.cache.find_active_user(user_id=message.chat.id)
         
@@ -190,7 +190,7 @@ class Database:
     
     def update_lessons(self, message: Message):
         # работа с данными, затем с кешом и монго
-        active_user = self.detect_active_user(message)
+        active_user = self.get_active_user(message)
                 
         if active_user["done_lessons"] < active_user["max_lessons"]:
             active_user["done_lessons"] += 1

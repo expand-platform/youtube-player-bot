@@ -30,7 +30,7 @@ class AccessLevelFilter(AdvancedCustomFilter):
         
         # self.log(f"message.message.chat.id: { message.message.chat.id }")
         
-        active_user = Database().detect_active_user(message)
+        active_user = Database().get_active_user(message)
         
         # user_name = Database().get_real_name(active_user)
         # self.log(f"Бот использует (Filter.py): { user_name }")

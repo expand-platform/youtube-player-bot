@@ -16,6 +16,8 @@ from src.database.Database import Database
 
 from src.languages.Language import Language
 
+from src.data.exchange_rates import EXCHANGE_RATES
+
 
 
 class DialogGenerator:
@@ -48,7 +50,7 @@ class DialogGenerator:
         
         @self.bot._bot.message_handler(commands=[command_name], access_level=access_level)
         def handle_command(message: Message):
-            active_user = Database().detect_active_user(message)
+            active_user = Database().get_active_user(message)
             
             if set_slash_command:
                 self.set_slash_commands(active_user)
@@ -171,7 +173,7 @@ class DialogGenerator:
                 keyboard: InlineKeyboardMarkup = None
                 
                 #? initial user data
-                active_user = Database().detect_active_user(message)
+                active_user = Database().get_active_user(message)
                 messages = Language().messages
                 
                 # print("🐍 active_user (step_gen): ",active_user)
@@ -356,6 +358,25 @@ class DialogGenerator:
             
             case "user.payment_amount":
                 return active_user["payment_amount"]
+            
+            # case "user.exchange_rate":
+            #     user_currency = active_user["currency"]
+            #     print("🐍 user_currency",user_currency)
+
+            #     if user_currency == "usd":
+            #         return EXCHANGE_RATES["usd"]
+            #     else: return EXCHANGE_RATES["euro"]
+            
+            case "user.amount_uah":
+                user_currency = active_user["currency"]
+                print("🐍 user_currency",user_currency)
+
+                print("🐍 user_amount", active_user["payment_amount"])
+
+                if user_currency == "usd":
+                    return round(active_user["payment_amount"] * EXCHANGE_RATES["usd"])
+                else: return round(active_user["payment_amount"] * EXCHANGE_RATES["euro"])
+
             
             case "user.payment_status":
                 if active_user["payment_status"]:
