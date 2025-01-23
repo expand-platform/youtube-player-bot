@@ -409,7 +409,7 @@ class DialogGenerator:
 
                 return count
 
-            case "students.amount":
+            case "students.dollar_amount":
                 total_sum = 0
                 users = Database().get_users()
                 
@@ -420,6 +420,21 @@ class DialogGenerator:
                         
                 #? range 80%-100%
                 return f"{round(total_sum * 0.8)} - {round(total_sum)}"
+
+
+            case "students.uah_amount":
+                total_sum = 0
+                users = Database().get_users()
+                
+                for user in users:
+                    print(f"user: {user}")
+                    if user["access_level"] == "student":
+                        total_sum += user["payment_amount"]
+
+                total_sum *= EXCHANGE_RATES["usd"]        
+                
+                #? range 80%-100%
+                return f"{ round(total_sum * 0.8) } - { round(total_sum) }"
             
             case "students.average":
                 total_sum = 0

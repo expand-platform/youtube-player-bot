@@ -140,8 +140,9 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
 #? income
 "income": {
     "count": "Студентов: *{}*",
-    "amount": "Возможный доход : *{} грн*",
-    "average": "Средний доход со студента: *{} грн*",
+    "dollar_amount": "Возможный доход US: *${}*",
+    "uah_amount": "Возможный доход UAH: *{} грн*",
+    "average": "Средний доход со студента: *${}*",
 },
 
 #? /nv (new version)
