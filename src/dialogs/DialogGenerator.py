@@ -357,7 +357,12 @@ class DialogGenerator:
                 return real_name
             
             case "user.payment_amount":
-                return active_user["payment_amount"]
+                currency_sign = "$"
+
+                if active_user["currency"] == "eur":
+                    currency_sign = "€"
+
+                return f"{currency_sign}{ active_user["payment_amount"] }"
             
             # case "user.exchange_rate":
             #     user_currency = active_user["currency"]
@@ -375,7 +380,7 @@ class DialogGenerator:
 
                 if user_currency == "usd":
                     return round(active_user["payment_amount"] * EXCHANGE_RATES["usd"])
-                else: return round(active_user["payment_amount"] * EXCHANGE_RATES["euro"])
+                else: return round(active_user["payment_amount"] * EXCHANGE_RATES["eur"])
 
             
             case "user.payment_status":
@@ -793,7 +798,7 @@ class DialogGenerator:
             if property_name in ["max_lessons", "done_lessons", "lessons_left", "payment_amount"]:
                 return int(value_to_correct)
             
-            if property_name in ["real_name", "last_name", "first_name", "username"]:
+            if property_name in ["real_name", "last_name", "first_name", "username", "currency"]:
                 return str(value_to_correct)
             
             if property_name in ["payment_status"]:

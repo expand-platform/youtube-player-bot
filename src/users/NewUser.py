@@ -107,6 +107,8 @@ class NewStudent():
             "joined_at": datetime.now().strftime("%d-%m-%Y %H:%M:%S"),
             
             "stats": {},
+            
+            "currency": "usd",
         }
         return new_student
     

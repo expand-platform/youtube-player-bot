@@ -82,7 +82,7 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
 
 #? /payment
 "payment": {
-"amount": "Цена в этом месяце: _${}_",
+"amount": "Цена в этом месяце: _{}_",
 "amount_uah": "В гривнах это: _{} грн_",
 "status": """
 {} уроки в этом месяце
