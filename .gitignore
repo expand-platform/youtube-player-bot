@@ -12,7 +12,6 @@ order.md
 colors.css
 
 test.py
-automation.py
 
 src/bot/__pycache__
 src/commands/__pycache__
