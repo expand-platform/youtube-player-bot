@@ -1,7 +1,3 @@
-# 4 урока - 2400
-# 8 уроков - 3840
-# 12 уроков - 5280
-
 INITIAL_USERS = [
     {
         "real_name": "Дамир",
@@ -53,13 +49,6 @@ INITIAL_USERS = [
     {
         "real_name": "Назар",
         "last_name": "Сулима",
-        "payment_amount": 2400,
-        "max_lessons": 4,
-        "access_level": "student",
-    },
-    {
-        "real_name": "Олег",
-        "last_name": "Голованенко",
         "payment_amount": 2400,
         "max_lessons": 4,
         "access_level": "student",
