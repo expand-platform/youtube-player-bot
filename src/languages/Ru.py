@@ -9,6 +9,7 @@ MENU_COMMANDS_RU = {
 
 
 
+
 BOT_MESSAGES_RU = {
 #? Guests only messages
 "guest_welcome": """Привет, {}! 
