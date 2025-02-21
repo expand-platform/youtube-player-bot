@@ -4,7 +4,7 @@ from src.languages.Language import Language
 from src.bot.Bot import Bot
 from src.dialogs.DialogGenerator import DialogGenerator
 
-from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates, RemoveUserStates
+from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates, RemoveUserStates, AdminPaymentStates
 
 """ 
     ? Admin commands: 
@@ -34,7 +34,15 @@ from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeU
     
     #! /income: how much money earned in this month
 
+    #! /payment for admin: 
+      - ✅ Илья (1800 грн)  
+      - ❌ Никита (1200 грн)
+
+      - /ps (payment stats)
+      - Выплатили: $30 (3000 грн) 
+      - Не выплатили: $70 (7000 грн)
 """
+
 
 
 class AdminDialogs:
@@ -363,15 +371,46 @@ class AdminDialogs:
             
             bot_before_message=self.messages["remove_user"]["success"],
         )
+
+        #? /payment (1): select user by id (inline buttons)
+        self.dialog_generator.make_dialog(
+            handler_type="command",
+            command_name="payment",
+            access_level=["admin"],
+            
+            active_state=None,
+            next_state=AdminPaymentStates.stages[0],
+            
+            bot_before_message=self.messages["payment_admin"]["users_list"],
+
+            handler_prefix="pa",
+            buttons_callback_prefix="user_id",
+
+            keyboard_with_before_message="users.payment_status"
+        )
+        
+        #? /ps: payment_stats
+        self.dialog_generator.make_dialog(
+            handler_type="command",
+            command_name="ps",
+            access_level=["admin"],
+            
+            active_state=None,
+            next_state=None,
+            
+            formatted_messages=[self.messages["payment_admin"]["paid_amount_uah"], self.messages["payment_admin"]["unpaid_amount_uah"]],
+            formatted_variables=["users.paid_amount_uah", "users.unpaid_amount_uah"],
+
+            handler_prefix="ps",
+        )
         
         
         self.log(f"Команды / диалоги админа установлены 🥂")
+
+    
         
         
                 
-    #? У студента будет свой раздел payment, у админа - свой
-    #? Админ будет видеть всех студентов, их суммы, доход и статусы оплат (и сколько осталось) 
-    #? Студент видит только свой статус и сумму 
             
         
         
