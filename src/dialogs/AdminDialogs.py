@@ -353,8 +353,8 @@ class AdminDialogs:
 
         #? /ru (2) -> final: success message 
         self.dialog_generator.make_dialog(
-            access_level=["admin"],
             handler_type="keyboard",
+            access_level=["admin"],
                         
             handler_prefix="ru",
             handler_property="user_id",
@@ -387,6 +387,26 @@ class AdminDialogs:
             buttons_callback_prefix="user_id",
 
             keyboard_with_before_message="users.payment_status"
+        )
+
+        self.dialog_generator.make_dialog(
+            handler_type="keyboard",
+            access_level=["admin"],
+                        
+            handler_prefix="pa",
+            handler_property="user_id",
+            
+            active_state=AdminPaymentStates.stages[0],
+            next_state=None,
+            state_variable="user_id",
+            
+            use_state_data=True,
+            requested_state_data="selected_user",
+            
+            database_method_name="update_user.payment_status",
+            database_activation_position="before_messages",
+            
+            bot_before_message=self.messages["payment_admin"]["success_user_update"],
         )
         
         #? /ps: payment_stats

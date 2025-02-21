@@ -638,6 +638,19 @@ class DialogGenerator:
                     key=data_from_state["user_property"],
                     new_value=data_from_state["new_value"],
                 )
+            
+            case "update_user.payment_status":
+                self.log(f"state dat (2)  { data_from_state }")
+                # self.log(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
+
+                user_to_change = Cache().get_user(data_from_state["user_id"])
+                self.log(f"🐍 user_to_change: {user_to_change}")
+
+                Database().update_user(
+                    user=user_to_change,
+                    key="payment_status",
+                    new_value=1,
+                )
 
             case "bulk_update":
                 # ? update all users of selected category
