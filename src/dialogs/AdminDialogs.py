@@ -108,8 +108,8 @@ class AdminDialogs:
             active_state=None,
             next_state=None,
 
-            formatted_messages=[self.messages["income"]["count"], self.messages["income"]["dollar_amount"], self.messages["income"]["uah_amount"], self.messages["income"]["average"]],
-            formatted_variables=["students.count", "students.dollar_amount", "students.uah_amount", "students.average"],
+            formatted_messages=[self.messages["income"]["count"], self.messages["income"]["uah_amount"], self.messages["income"]["average"]],
+            formatted_variables=["students.count", "students.uah_amount", "students.average"],
         )
         
         
@@ -418,8 +418,8 @@ class AdminDialogs:
             active_state=None,
             next_state=None,
             
-            formatted_messages=[self.messages["payment_admin"]["paid_amount_uah"], self.messages["payment_admin"]["unpaid_amount_uah"]],
-            formatted_variables=["users.paid_amount_uah", "users.unpaid_amount_uah"],
+            formatted_messages=[self.messages["payment_admin"]["paid_amount"], self.messages["payment_admin"]["unpaid_amount"]],
+            formatted_variables=["users.paid_amount", "users.unpaid_amount"],
 
             handler_prefix="ps",
         )

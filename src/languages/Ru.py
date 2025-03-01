@@ -76,8 +76,7 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
     ],
     # ? /payment
     "payment": {
-        "amount": "Цена в этом месяце: _{}_",
-        "amount_uah": "В гривнах это: _{} грн_",
+        "amount": "Цена в этом месяце: _{} грн_",
         "status": """
 {} уроки в этом месяце
 """,
@@ -172,8 +171,8 @@ https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
     "payment_admin": {
         "users_list": "Статус оплаты в этом месяце",
         "see_payment_stats": "Смотри статистику в /ps",
-        "paid_amount_uah": "Получил денежек: *{} грн*",
-        "unpaid_amount_uah": "В пути: *{} грн*",
+        "paid_amount": "Получил денежек: *{} грн*",
+        "unpaid_amount": "В пути: *{} грн*",
         "success_user_update": "Оплата отмечена! Смотри /payment",
     },
 }

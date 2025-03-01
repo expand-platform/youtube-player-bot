@@ -65,8 +65,8 @@ class UserDialogs:
             command_name="payment",
             access_level=["student"], 
             
-            formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["amount_uah"], self.messages["payment"]["status"]],
-            formatted_variables=["user.payment_amount", "user.amount_uah", "user.payment_status"],
+            formatted_messages=[self.messages["payment"]["amount"], self.messages["payment"]["status"]],
+            formatted_variables=["user.amount", "user.payment_status"],
 
             bot_after_message=self.messages["payment"]["see_cards"]
         )

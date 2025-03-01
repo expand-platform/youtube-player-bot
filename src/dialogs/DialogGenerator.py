@@ -21,8 +21,6 @@ from src.database.Database import Database
 
 from src.languages.Language import Language
 
-from src.data.exchange_rates import EXCHANGE_RATES
-
 
 class DialogGenerator:
     def __init__(self):
@@ -390,18 +388,12 @@ class DialogGenerator:
 
                 return f"{currency_sign}{ active_user["payment_amount"] }"
 
-            case "user.amount_uah":
-                user_currency = active_user["currency"]
-                print("🐍 user_currency", user_currency)
-
+            case "user.amount":
                 print("🐍 user_amount", active_user["payment_amount"])
+                return active_user["payment_amount"]
 
-                if user_currency == "usd":
-                    return round(active_user["payment_amount"] * EXCHANGE_RATES["usd"])
-                else:
-                    return round(active_user["payment_amount"] * EXCHANGE_RATES["eur"])
 
-            case "users.paid_amount_uah":
+            case "users.paid_amount":
                 users = Database().get_users()
 
                 paid_amount = 0
@@ -412,13 +404,10 @@ class DialogGenerator:
                         if user["payment_status"]:
                             paid_amount += user["payment_amount"]
 
-                # ? convert to UAH
-                paid_amount_uah = paid_amount * EXCHANGE_RATES["usd"]
-                print("🐍 paid_amount_uah", paid_amount_uah)
+                print("🐍 paid_amount_uah", paid_amount)
+                return paid_amount
 
-                return paid_amount_uah
-
-            case "users.unpaid_amount_uah":
+            case "users.unpaid_amount":
                 users = Database().get_users()
 
                 unpaid_amount = 0
@@ -429,11 +418,8 @@ class DialogGenerator:
                         if not user["payment_status"]:
                             unpaid_amount += user["payment_amount"]
 
-                # ? convert to UAH
-                unpaid_amount_uah = unpaid_amount * EXCHANGE_RATES["usd"]
-                print("🐍 unpaid_amount_uah", unpaid_amount_uah)
-
-                return unpaid_amount_uah
+                print("🐍 unpaid_amoun", unpaid_amount)
+                return unpaid_amount
 
             case "user.payment_status":
                 if active_user["payment_status"]:
@@ -470,17 +456,17 @@ class DialogGenerator:
 
                 return count
 
-            case "students.dollar_amount":
-                total_sum = 0
-                users = Database().get_users()
+            # case "students.dollar_amount":
+            #     total_sum = 0
+            #     users = Database().get_users()
 
-                for user in users:
-                    print(f"user: {user}")
-                    if user["access_level"] == "student":
-                        total_sum += user["payment_amount"]
+            #     for user in users:
+            #         print(f"user: {user}")
+            #         if user["access_level"] == "student":
+            #             total_sum += user["payment_amount"]
 
-                # ? range 80%-100%
-                return f"{round(total_sum * 0.8)} - {round(total_sum)}"
+            #     # ? range 80%-100%
+            #     return f"{round(total_sum * 0.8)} - {round(total_sum)}"
 
             case "students.uah_amount":
                 total_sum = 0
@@ -491,7 +477,7 @@ class DialogGenerator:
                     if user["access_level"] == "student":
                         total_sum += user["payment_amount"]
 
-                total_sum *= EXCHANGE_RATES["usd"]
+                # total_sum *= EXCHANGE_RATES["usd"]
 
                 # ? range 80%-100%
                 return f"{ round(total_sum * 0.8) } - { round(total_sum) }"
@@ -889,7 +875,7 @@ class DialogGenerator:
                         payment_amount = user["payment_amount"]
                         print("🐍 payment_amount", payment_amount)
 
-                        payment_amount_uah = payment_amount * EXCHANGE_RATES["usd"]
+                        # payment_amount_uah = payment_amount * EXCHANGE_RATES["usd"]
 
                         button_callback_data = (
                             f"{handler_prefix}:{buttons_prefix}:{user_id}"
@@ -897,7 +883,7 @@ class DialogGenerator:
                         print("🐍button_callback_data: ", button_callback_data)
 
                         button_text = (
-                            f"{payment_sign} {real_name} {payment_amount_uah} грн"
+                            f"{payment_sign} {real_name} {payment_amount} грн"
                         )
                         print("🐍 button_text", button_text)
 
