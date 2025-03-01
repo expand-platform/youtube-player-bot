@@ -1,4 +1,4 @@
 EXCHANGE_RATES = {
-    "usd": 43,
+    "usd": 42,
     "eur": 45,
 }
