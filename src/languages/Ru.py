@@ -36,6 +36,10 @@ BOT_MESSAGES_RU = {
 🎱 Назар 
 🤠 Дима 
 
+*13:10*
+🧨 Олег
+🎨 Ярослав
+
 *19:00*
 👌 Андрей 
 """,
@@ -56,10 +60,6 @@ BOT_MESSAGES_RU = {
 
 *13:30* 
 🎭 Илья х Назар
-
-*15:30*
-🧨 Олег
-🎨 Ярослав
 """,
         """Ссылка на Zoom:
 https://us04web.zoom.us/j/5302871397?pwd=b1hVdmRKWXpvc3Vkblo5WkxmamVCdz09
