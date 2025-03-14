@@ -1,3 +1,4 @@
+from calendar import c
 from typing import Union
 from src.users.types import UserT
 
@@ -216,9 +217,8 @@ class DialogGenerator:
                     data_for_state = message.text
 
                 self.log(f"user's reply or selection: { data_for_state }")
-                # self.log(f"state: { state }")
 
-                self.save_data_in_state(
+                self.save_data_to_state(
                     variable_name=state_variable,
                     data_to_save=data_for_state,
                     state=state,
@@ -231,7 +231,6 @@ class DialogGenerator:
                     # prefixes
                     handler_prefix=handler_prefix,
                 )
-                #! тут почему-то None
                 print("🐍 state_data: ", state_data)
 
             # ? DB action (before messages)
@@ -544,6 +543,9 @@ class DialogGenerator:
         match database_method_name:
             case "clean":
                 Database().clean_users()
+            
+            case "schedule.clear":
+                Database().mongoDB.ScheduleDays.clear_schedule()
 
             case "fill":
                 Database().sync_cache_and_remote_users()
@@ -613,9 +615,6 @@ class DialogGenerator:
                 )
 
             case "update_user":
-                # self.log(f"state dat (2)  { data_from_state }")
-                # self.log(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
-
                 user_to_change = Cache().get_user(data_from_state["user_id"])
                 self.log(f"🐍 user_to_change: {user_to_change}")
 
@@ -627,7 +626,6 @@ class DialogGenerator:
             
             case "update_user.payment_status":
                 self.log(f"state dat (2)  { data_from_state }")
-                # self.log(f"state id: { data_from_state["id"] }, {type( data_from_state["id"])}")
 
                 user_to_change = Cache().get_user(data_from_state["user_id"])
                 self.log(f"🐍 user_to_change: {user_to_change}")
@@ -694,7 +692,50 @@ class DialogGenerator:
             case "remove_user":
                 Database().remove_user(data_from_state["user_id"])
 
-    def save_data_in_state(
+            case "schedule.show_day_schedule":
+                print("🐍 data_from_state (choose_db_method)",data_from_state)
+                day_id = data_from_state["day_id"]
+                print("day_id (choose_db_method)", day_id)
+                #? return day schedule
+                day_schedule = Database().mongoDB.ScheduleDays.get_schedule(day_id)
+                print("🐍 day_schedule (text)",day_schedule)
+                
+                if day_schedule == "":
+                    print("if")
+                    self.bot._bot.send_message(
+                        chat_id=message.chat.id,
+                        text=self.messages["schedule_admin"]["empty_schedule"],
+                        parse_mode="Markdown",
+                    )
+                #? if schedule exists
+                else:
+                    print("else")
+                    self.bot._bot.send_message(
+                        chat_id=message.chat.id,
+                        text=day_schedule,
+                        parse_mode="Markdown",
+                    )
+
+            case "schedule.update_schedule":
+                #! Тут нужны обе данные из state: id и new_schedule
+
+                print("🐍 schedule state data (choose_db_method)", data_from_state)
+                day_id = data_from_state["day_id"]
+                new_schedule = data_from_state["new_schedule"]
+                
+                Database().mongoDB.ScheduleDays.change_day_schedule(day_id, new_schedule)
+
+            case "schedule.show_schedule":
+                messages = Database().mongoDB.ScheduleDays.create_schedule_messages()
+
+                self.bot.send_multiple_messages(
+                    chat_id=message.chat.id,
+                    messages=messages,
+                    parse_mode="Markdown",
+                )
+
+
+    def save_data_to_state(
         self,
         variable_name: str,
         data_to_save=None,
@@ -720,6 +761,13 @@ class DialogGenerator:
 
             case "user.category":
                 state.add_data(user_category=data_to_save)
+            
+            #? schedule
+            case "schedule.day_id":
+                state.add_data(day_id=data_to_save)
+            
+            case "schedule.new_schedule":
+                state.add_data(new_schedule=data_to_save)
 
     def get_state_data(
         self,
@@ -780,13 +828,61 @@ class DialogGenerator:
                 # ? extract category from state
                 with state.data() as data:
                     if data["user_category"]:
-                        selected_category = data["user_category"]
+                        selected_day = data["user_category"]
                         print(
                             "🐍 selected_category: (create_inline_keyboard)",
-                            selected_category,
+                            selected_day,
                         )
 
-                return {"category": selected_category}
+                return {"category": selected_day}
+
+
+            case "schedule.day_id":
+                with state.data() as data:
+                    print("🐍 data",data)
+                    if data["day_id"]:
+                        day_id_str = data.get("day_id").removeprefix(
+                            f"{handler_prefix}:day_id:"
+                        )
+                        print("🐍 day_id_str",day_id_str)
+                        day_id = self.set_correct_property_type(
+                            property_name="day_id", value_to_correct=day_id_str
+                        )
+                        print("🐍 day_id",day_id)
+                        
+                        return {"day_id": day_id}
+            
+            case "schedule.all":
+                state_obj = {}
+                with state.data() as data:
+                    print("🐍 data",data)
+                    if data["day_id"]:
+                        day_id_str = data.get("day_id").removeprefix(
+                            f"{handler_prefix}:day_id:"
+                        )
+                        print("🐍 day_id_str",day_id_str)
+                        day_id = self.set_correct_property_type(
+                            property_name="day_id", value_to_correct=day_id_str
+                        )
+                        print("🐍 day_id",day_id)
+                        
+                        state_obj["day_id"] = day_id
+                    
+                    if data["new_schedule"]:
+                        new_schedule_str = data.get("new_schedule").removeprefix(
+                            f"{handler_prefix}:new_schedule:"
+                        )
+
+                        print("🐍 new_schedule_str",new_schedule_str)
+                        new_schedule = self.set_correct_property_type(
+                            property_name="new_schedule", value_to_correct=new_schedule_str
+                        )
+                        
+                        print("🐍 new_schedule: ", new_schedule)
+                        state_obj["new_schedule"] = new_schedule
+                #? return all schedule data
+                return state_obj
+                    
 
             case "all":
                 with state.data() as data:
@@ -831,10 +927,10 @@ class DialogGenerator:
                     )
                     print("🐍button_callback_data: ", button_callback_data)
 
-                    category_button = InlineKeyboardButton(
+                    day_button = InlineKeyboardButton(
                         text=real_name, callback_data=button_callback_data
                     )
-                    keyboard.add(category_button)
+                    keyboard.add(day_button)
 
             case "select_user_property":
                 callback_user_id = callback_user_id.removeprefix(
@@ -849,11 +945,11 @@ class DialogGenerator:
 
                 for user_property in selected_user:
                     print("🚀 user_property: ", user_property)
-                    category_button = InlineKeyboardButton(
+                    day_button = InlineKeyboardButton(
                         text=user_property,
                         callback_data=f"{handler_prefix}:user_property:{user_property}",
                     )
-                    keyboard.add(category_button)
+                    keyboard.add(day_button)
 
             case "users.payment_status":
                 for user in cache_users:
@@ -887,25 +983,39 @@ class DialogGenerator:
                         )
                         print("🐍 button_text", button_text)
 
-                        category_button = InlineKeyboardButton(
+                        day_button = InlineKeyboardButton(
                             text=button_text, callback_data=button_callback_data
                         )
-                        keyboard.add(category_button)
+                        keyboard.add(day_button)
 
-            case "hometask_actions":
-                for key, value in self.messages["hometask"]["buttons"].items():
-                    self.log(f"key: {key}")
-                    self.log(f"key: {value}")
+            #! hometask, скорее всего, не будет
+            # case "hometask_actions":
+            #     for key, value in self.messages["hometask"]["buttons"].items():
+            #         self.log(f"key: {key}")
+            #         self.log(f"key: {value}")
 
-                    self.log(
-                        f"button callback data: {handler_prefix}:{buttons_prefix}:{key}"
+            #         self.log(
+            #             f"button callback data: {handler_prefix}:{buttons_prefix}:{key}"
+            #         )
+
+            #         hometask_button = InlineKeyboardButton(
+            #             text=value,
+            #             callback_data=f"{handler_prefix}:{buttons_prefix}:{key}",
+            #         )
+            #         keyboard.add(hometask_button)
+
+            case "schedule.days_list":
+                days_list = Database().mongoDB.ScheduleDays.get_days()
+                print("🐍 days_list",days_list)
+
+                for day in days_list:
+                    # print(f"day: {day}")
+                    day_button = InlineKeyboardButton(
+                        text=day["name"],
+                        callback_data=f"{handler_prefix}:{buttons_prefix}:{day["id"]}",
                     )
-
-                    hometask_button = InlineKeyboardButton(
-                        text=value,
-                        callback_data=f"{handler_prefix}:{buttons_prefix}:{key}",
-                    )
-                    keyboard.add(hometask_button)
+                    keyboard.add(day_button)
+                    
 
             case "users.access_level":
                 user_categories = set()
@@ -924,11 +1034,11 @@ class DialogGenerator:
                         f"button callback data: {handler_prefix}:{buttons_prefix}:{category}"
                     )
 
-                    category_button = InlineKeyboardButton(
+                    day_button = InlineKeyboardButton(
                         text=category,
                         callback_data=f"{handler_prefix}:{buttons_prefix}:{category}",
                     )
-                    keyboard.add(category_button)
+                    keyboard.add(day_button)
 
             #! Написать метод extract_state_data()
             case "users.access_level.properties":
@@ -946,11 +1056,11 @@ class DialogGenerator:
                 for user_property, value in user_within_category.items():
                     # print("🚀 property: ", key)
 
-                    category_button = InlineKeyboardButton(
+                    day_button = InlineKeyboardButton(
                         text=user_property,
                         callback_data=f"{handler_prefix}:{buttons_prefix}:{user_property}",
                     )
-                    keyboard.add(category_button)
+                    keyboard.add(day_button)
 
         return keyboard
 
@@ -962,6 +1072,7 @@ class DialogGenerator:
             "done_lessons",
             "lessons_left",
             "payment_amount",
+            "day_id",
         ]:
             return int(value_to_correct)
 
@@ -971,6 +1082,7 @@ class DialogGenerator:
             "first_name",
             "username",
             "currency",
+            "new_schedule",
         ]:
             return str(value_to_correct)
 

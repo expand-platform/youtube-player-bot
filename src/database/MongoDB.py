@@ -177,6 +177,15 @@ class ScheduleDays:
         self.days = list(schedule_collection.find({}))
         # print("🐍 self.days", self.days)
 
+    def get_days(self):
+        return list(self.schedule_collection.find({}))
+    
+    #? get scheduled lessons from a specific day
+    def get_schedule(self, day_id: int) -> str: 
+        day = self.schedule_collection.find_one(filter={"id": day_id})
+        print("🐍 day info (mongo): ",day)
+        return day["lessons"] 
+
     def check_days_integrity(self):
         if len(self.days) < 7:
             print("Не все дни в порядке...")
@@ -188,9 +197,23 @@ class ScheduleDays:
             self.schedule_collection.insert_one(day)
             print(f"day {day} created in schedule!")
 
-    def change_day_schedule(self, day_id, new_schedule):
-        for day in self.days:
-            self.logger.info(f"day: {day}")
-            if day["id"] == day_id:
-                day["lessons"] = new_schedule
-                print(f"{day["lessons"]} changed for {new_schedule}")
+    def change_day_schedule(self, day_id: int, new_schedule: str):
+        self.schedule_collection.update_one(filter={"id": day_id}, update={"$set": {"lessons": new_schedule} })
+        print(f"Schedule for { SCHEDULE_DAYS[day_id]["name"]} successfully changed! ")
+
+    def create_schedule_messages(self):
+        days = self.get_days()
+        messages = []
+
+        for day in days:
+            # print(f"day: {day}")
+            if day["lessons"] != "":
+                messages.append(day["lessons"])
+            
+            print("🐍 messages: ",messages)
+        
+        return messages
+    
+    def clear_schedule(self):
+        self.schedule_collection.update_many({}, {"$set": {"lessons": ""}})
+        print("Schedule cleared!")

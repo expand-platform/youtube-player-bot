@@ -65,10 +65,23 @@ class RemoveUserStates(StatesGroup):
         select_user,
     ]
 
+
 # ? /ru: remove user
 class AdminPaymentStates(StatesGroup):
     select_user = State()
 
     stages = [
         select_user,
+    ]
+
+# ? /sched: change schedule
+class AdminScheduleStates(StatesGroup):
+    select_day = State()
+    show_schedule_hint = State()
+    input_new_schedule = State()
+
+    stages = [
+        select_day,
+        show_schedule_hint,
+        input_new_schedule
     ]

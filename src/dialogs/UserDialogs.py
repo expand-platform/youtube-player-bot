@@ -44,11 +44,28 @@ class UserDialogs:
         )
         
         #? /schedule 
-        self.dialog_generator.set_command(
-            command_name="schedule",
-            access_level=["student", "admin"], 
+        # self.dialog_generator.set_command(
+        #     command_name="schedule",
+        #     access_level=["student", "admin"], 
             
-            bot_before_multiple_messages=self.messages["schedule"],
+        #     bot_before_multiple_messages=self.messages["schedule"],
+        # )
+
+        self.dialog_generator.make_dialog(
+            access_level=["student", "admin"],
+            
+            handler_type="command",
+            command_name="schedule",
+            
+            active_state=None,
+            next_state=None,
+            
+            bot_before_message=self.messages["schedule"]["start"],
+
+            database_activation_position="after_messages",
+            database_method_name="schedule.show_schedule",
+
+            bot_after_message=self.messages["schedule"]["zoom_link"]
         )
         
         #? /card 

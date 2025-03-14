@@ -4,7 +4,7 @@ from src.languages.Language import Language
 from src.bot.Bot import Bot
 from src.dialogs.DialogGenerator import DialogGenerator
 
-from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates, RemoveUserStates, AdminPaymentStates
+from src.bot.States import VersionSequenceStates, UpdateUserSequenceStates, SeeUserSequenceStates, BulkEditorStates, RemoveUserStates, AdminPaymentStates, AdminScheduleStates
 
 """ 
     ? Admin commands: 
@@ -65,6 +65,16 @@ class AdminDialogs:
         self.dialog_generator.simple_admin_command(
             command_name="fill",
             database_method_name="fill",
+        )
+       
+        #? clear schedule (/cs)
+        self.dialog_generator.simple_admin_command(
+            command_name="cs",
+
+            database_activation_position="before_message",
+            database_method_name="schedule.clear",
+            
+            bot_after_message=self.messages["schedule"]["cleared"],
         )
 
         
@@ -389,6 +399,7 @@ class AdminDialogs:
             keyboard_with_before_message="users.payment_status"
         )
 
+        #? /payment (2): change payment status for selected user 
         self.dialog_generator.make_dialog(
             handler_type="keyboard",
             access_level=["admin"],
@@ -423,6 +434,69 @@ class AdminDialogs:
 
             handler_prefix="ps",
         )
+
+        #? update_schedule (/us) (1): select day by id (inline buttons)
+        self.dialog_generator.make_dialog(
+            handler_type="command",
+            command_name="us",
+            access_level=["admin"],
+            
+            active_state=None,
+            next_state=AdminScheduleStates.stages[0],
+            
+            bot_before_message=self.messages["schedule_admin"]["days_list"],
+
+            handler_prefix="us",
+            buttons_callback_prefix="day_id",
+
+            keyboard_with_before_message="schedule.days_list"
+        )
+
+        #! not update -- get day schedule (by id) and print it out!
+
+        #? update_schedule (/us) (2): bot sends day schedule and waits for prompt (new schedule) 
+        self.dialog_generator.make_dialog(
+            handler_type="keyboard",
+            access_level=["admin"],
+                        
+            handler_prefix="us",
+            handler_property="day_id",
+            
+            active_state=AdminScheduleStates.stages[1],
+            next_state=AdminScheduleStates.stages[2],
+            state_variable="schedule.day_id",
+            
+            #! На этом этапе не должно быть очистки state - он нужен на следующем
+            use_state_data=True,
+            requested_state_data="schedule.day_id",
+            
+            bot_before_message=self.messages["schedule_admin"]["show_day_schedule"],
+
+            database_method_name="schedule.show_day_schedule",
+            database_activation_position="after_messages",
+        )
+        
+        #? update_schedule (/us) (3): bot sends day schedule and waits for prompt (new schedule) 
+        self.dialog_generator.make_dialog(
+            handler_type="state",
+            access_level=["admin"],
+                        
+            handler_prefix="us",
+            # handler_property="day_id",
+            
+            active_state=AdminScheduleStates.stages[2],
+            next_state=None,
+            state_variable="schedule.new_schedule",
+            
+            use_state_data=True,
+            requested_state_data="schedule.all",
+            
+            database_method_name="schedule.update_schedule",
+            database_activation_position="after_messages",
+            
+            bot_before_message=self.messages["schedule_admin"]["success_schedule_update"],
+        )
+
         
         
         self.log(f"Команды / диалоги админа установлены 🥂")
