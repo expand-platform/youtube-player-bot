@@ -242,8 +242,8 @@ class Database:
     #! Вынести в класс Time
     def week_of_month(self, dt):
         first_day = dt.replace(day=1)
-        dom = dt.day
-        adjusted_dom = dom + first_day.weekday()  # Weekday ranges from 0 (Monday) to 6 (Sunday)
+        date_of_month = dt.day
+        adjusted_dom = date_of_month + first_day.weekday()  # Weekday ranges from 0 (Monday) to 6 (Sunday)
         return (adjusted_dom - 1) // 7 + 1
 
     def make_monthly_reset(self):

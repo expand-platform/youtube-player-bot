@@ -60,6 +60,9 @@ class Server:
     def start_bot_thread(self):
         database = Database()
         database.sync_cache_and_remote_users()
+
+        # create days
+        database.mongoDB.ScheduleDays.check_days_integrity()
         
         BotDialogs().enable_dialogs()
         
