@@ -382,59 +382,6 @@ class AdminDialogs:
             bot_before_message=self.messages["remove_user"]["success"],
         )
 
-        #? /payment (1): select user by id (inline buttons)
-        # self.dialog_generator.make_dialog(
-        #     handler_type="command",
-        #     command_name="payment",
-        #     access_level=["admin"],
-            
-        #     active_state=None,
-        #     next_state=AdminPaymentStates.stages[0],
-            
-        #     bot_before_message=self.messages["payment_admin"]["users_list"],
-
-        #     handler_prefix="pa",
-        #     buttons_callback_prefix="user_id",
-
-        #     keyboard_with_before_message="users.payment_status"
-        # )
-
-        # #? /payment (2): change payment status for selected user 
-        # self.dialog_generator.make_dialog(
-        #     handler_type="keyboard",
-        #     access_level=["admin"],
-                        
-        #     handler_prefix="pa",
-        #     handler_property="user_id",
-            
-        #     active_state=AdminPaymentStates.stages[0],
-        #     next_state=None,
-        #     state_variable="user_id",
-            
-        #     use_state_data=True,
-        #     requested_state_data="selected_user",
-            
-        #     database_method_name="update_user.payment_status",
-        #     database_activation_position="before_messages",
-            
-        #     bot_before_message=self.messages["payment_admin"]["success_user_update"],
-        # )
-        
-        #? /ps: payment_stats
-        # self.dialog_generator.make_dialog(
-        #     handler_type="command",
-        #     command_name="ps",
-        #     access_level=["admin"],
-            
-        #     active_state=None,
-        #     next_state=None,
-            
-        #     formatted_messages=[self.messages["payment_admin"]["paid_amount"], self.messages["payment_admin"]["unpaid_amount"]],
-        #     formatted_variables=["users.paid_amount", "users.unpaid_amount"],
-
-        #     handler_prefix="ps",
-        # )
-
         #? update_schedule (/us) (1): select day by id (inline buttons)
         self.dialog_generator.make_dialog(
             handler_type="command",

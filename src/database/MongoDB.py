@@ -12,8 +12,7 @@ from src.users.InitialUsers import InitialUsers
 
 from src.data.schedule_days import SCHEDULE_DAYS
 
-
-#! Когда-нибудь руки дойдут до хеширования данных (как минимум: user_id, real_name)
+from src.config.database import DATABASE
 
 
 class MongoDB:
@@ -25,8 +24,8 @@ class MongoDB:
     replica_db: Database = None
 
     def __new__(cls, *args, **kwargs):
-        DATABASE_NAME = "school-bot"
-        REPLICA_DB_NAME = "replica"
+        DATABASE_NAME = DATABASE["name"]
+        REPLICA_DB_NAME = DATABASE["replica"]["name"]
 
         MONGO_URI = Dotenv().mongodb_string
 

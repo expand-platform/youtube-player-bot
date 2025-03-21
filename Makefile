@@ -1,5 +1,5 @@
 bot:
-	pipenv run uvicorn src.main:app --log-level debug
+	poetry run uvicorn src.main:app --log-level debug
 
 test:
 	uvicorn test:app
